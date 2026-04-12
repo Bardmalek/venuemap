@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VenueMap — CS Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ed;--bg2:#edeae4;--white:#fefcfa;--ink:#1a1916;--ink2:#4a4843;--ink3:#9a9690;
+  --border:#d8d4cc;--border2:#c8c4bc;
+  --amber:#d4620a;--amber-light:#f07030;--amber-bg:#fdf0e8;--amber-border:#f0c8a8;
+  --green:#1a6b3c;--green-bg:#e8f5ee;--red:#c0392b;--red-bg:#fde8e8;
+  --yellow:#b45309;--yellow-bg:#fef3e8;--blue:#1d4ed8;--blue-bg:#eff6ff;
+  --serif:'Instrument Serif',serif;--sans:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;display:flex;flex-direction:column;}
+
+/* NAV */
+nav{height:52px;background:var(--ink);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;padding:0 24px;gap:14px;flex-shrink:0;}
+.logo{font-size:15px;font-weight:800;letter-spacing:-0.5px;color:white;text-decoration:none;display:flex;align-items:center;gap:7px;}
+.logo-mark{width:22px;height:22px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;}
+.nav-badge{background:var(--red);color:white;font-size:9px;font-weight:800;padding:2px 7px;border-radius:100px;letter-spacing:1px;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-user{font-size:11px;color:rgba(255,255,255,0.5);font-family:var(--mono);}
+.nav-btn{padding:6px 14px;border-radius:100px;font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;transition:all 0.15s;text-decoration:none;}
+.nav-btn:hover{border-color:rgba(255,255,255,0.3);color:white;}
+
+/* LAYOUT */
+.main{flex:1;display:flex;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px;gap:2px;overflow-y:auto;}
+.sidebar-section{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);padding:8px 10px 4px;margin-top:6px;}
+.sidebar-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;color:var(--ink2);font-size:12px;font-weight:600;text-decoration:none;}
+.sidebar-item:hover{background:var(--bg2);color:var(--ink);}
+.sidebar-item.active{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber);}
+.sidebar-left{display:flex;align-items:center;gap:8px;}
+.sidebar-count{background:var(--red);color:white;font-size:9px;font-weight:800;padding:1px 6px;border-radius:100px;font-family:var(--mono);}
+.sidebar-count.amber{background:var(--amber);}
+.sidebar-count.green{background:var(--green);}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:20px;}
+.content::-webkit-scrollbar{width:4px;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* PAGE HEADER */
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.page-title{font-family:var(--serif);font-size:26px;font-style:italic;}
+.page-sub{font-size:11px;color:var(--ink3);margin-top:3px;}
+.page-actions{display:flex;gap:8px;align-items:center;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.amber::before{background:var(--amber);}
+.stat-card.green::before{background:var(--green);}
+.stat-card.red::before{background:var(--red);}
+.stat-card.blue::before{background:var(--blue);}
+.stat-card.yellow::before{background:var(--yellow);}
+.stat-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);margin-bottom:6px;}
+.stat-num{font-family:var(--serif);font-size:30px;font-style:italic;color:var(--ink);}
+.stat-sub{font-size:10px;color:var(--ink3);margin-top:3px;}
+
+/* SEARCH */
+.search-bar{display:flex;gap:8px;margin-bottom:14px;}
+.search-input{flex:1;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--amber);}
+.filter-select{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;cursor:pointer;}
+.action-btn{padding:6px 14px;border-radius:100px;font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer;transition:all 0.15s;}
+.action-btn:hover{border-color:var(--border2);color:var(--ink);background:var(--bg2);}
+.action-btn.primary{background:var(--amber);border-color:var(--amber);color:white;}
+.action-btn.primary:hover{background:var(--amber-light);}
+.action-btn.danger{color:var(--red);}
+.action-btn.danger:hover{border-color:var(--red);background:var(--red-bg);}
+.action-btn.success{color:var(--green);}
+.action-btn.success:hover{border-color:var(--green);background:var(--green-bg);}
+.action-btn.sm{padding:3px 9px;font-size:10px;}
+
+/* TABLE */
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+.table-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.table-head-title{font-size:13px;font-weight:700;}
+.table-head-sub{font-size:10px;color:var(--ink3);margin-top:2px;}
+table{width:100%;border-collapse:collapse;}
+th{padding:9px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);border-bottom:1px solid var(--border);background:var(--bg2);}
+td{padding:10px 14px;font-size:12px;color:var(--ink2);border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+.td-bold{font-weight:600;color:var(--ink);}
+.td-mono{font-family:var(--mono);font-size:11px;}
+.td-actions{display:flex;gap:4px;flex-wrap:wrap;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:100px;font-size:9px;font-weight:700;letter-spacing:0.3px;white-space:nowrap;}
+.bg{background:var(--green-bg);color:var(--green);}
+.ba{background:var(--amber-bg);color:var(--amber);}
+.br{background:var(--red-bg);color:var(--red);}
+.by{background:var(--yellow-bg);color:var(--yellow);}
+.bb{background:var(--blue-bg);color:var(--blue);}
+.bgr{background:var(--bg2);color:var(--ink3);}
+
+/* BOOKING DETAIL */
+.booking-detail{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.bd-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.bd-ref{font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:600;}
+.bd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.bd-item-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);margin-bottom:4px;}
+.bd-item-val{font-size:12px;font-weight:600;color:var(--ink);}
+
+/* ACTIVITY FEED */
+.activity-feed{display:flex;flex-direction:column;gap:0;}
+.activity-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.activity-item:last-child{border-bottom:none;}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.activity-content{flex:1;}
+.activity-text{font-size:12px;color:var(--ink2);line-height:1.5;}
+.activity-text strong{color:var(--ink);font-weight:600;}
+.activity-time{font-size:10px;color:var(--ink3);font-family:var(--mono);margin-top:3px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,25,22,0.5);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.12);animation:modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.modal-head{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:var(--serif);font-size:20px;font-style:italic;}
+.modal-x{background:none;border:1px solid var(--border);color:var(--ink2);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.modal-x:hover{background:var(--bg2);}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:12px 20px 18px;display:flex;gap:8px;border-top:1px solid var(--border);}
+.form-group{margin-bottom:13px;}
+.form-label{display:block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--amber);background:var(--white);}
+.form-textarea{resize:vertical;min-height:80px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* NOTE BOX */
+.note-box{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--ink2);line-height:1.6;margin-bottom:14px;}
+.note-box.red{background:var(--red-bg);border-color:rgba(192,57,43,0.2);}
+.note-box.green{background:var(--green-bg);border-color:rgba(26,107,60,0.2);}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:600;color:white;z-index:3000;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:8px;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:32px;gap:8px;color:var(--ink3);font-size:12px;}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px 20px;color:var(--ink3);font-size:12px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="vancouver_platform.html" class="logo"><div class="logo-mark">V</div>VenueMap CS</a>
+  <span class="nav-badge">INTERNAL</span>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser">—</span>
+    <a href="dashboard.html" class="nav-btn">Organizer Dashboard</a>
+    <button class="nav-btn" onclick="signOut()">Sign out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Command Center</div>
+    <div class="sidebar-item active" onclick="showPage('overview',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Overview
+      </div>
+    </div>
+    <div class="sidebar-item" onclick="showPage('bookings',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        All Bookings
+      </div>
+      <span class="sidebar-count amber" id="sbBookings">—</span>
+    </div>
+    <div class="sidebar-item" onclick="showPage('lookup',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Booking Lookup
+      </div>
+    </div>
+
+    <div class="sidebar-section">Users</div>
+    <div class="sidebar-item" onclick="showPage('users',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        All Users
+      </div>
+      <span class="sidebar-count green" id="sbUsers">—</span>
+    </div>
+    <div class="sidebar-item" onclick="showPage('organizers',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Organizers
+      </div>
+    </div>
+
+    <div class="sidebar-section">Events & Venues</div>
+    <div class="sidebar-item" onclick="showPage('events',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        All Events
+      </div>
+      <span class="sidebar-count" id="sbEvents">—</span>
+    </div>
+    <div class="sidebar-item" onclick="showPage('booths',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        All Booths
+      </div>
+    </div>
+
+    <div class="sidebar-section">Activity</div>
+    <div class="sidebar-item" onclick="showPage('activity',this)">
+      <div class="sidebar-left">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Live Activity
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Command Center</div>
+          <div class="page-sub" id="overviewDate">—</div>
+        </div>
+        <div class="page-actions">
+          <button class="action-btn" onclick="loadAll()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="stats-row" style="grid-template-columns:repeat(6,1fr);">
+        <div class="stat-card amber"><div class="stat-label">Organizer Revenue</div><div class="stat-num" id="oRevenue">—</div><div class="stat-sub">What creators pocket</div></div>
+        <div class="stat-card green"><div class="stat-label">VM Revenue (7%)</div><div class="stat-num" id="oVMRevenue">—</div><div class="stat-sub">Our platform cut</div></div>
+        <div class="stat-card green"><div class="stat-label">Confirmed Bookings</div><div class="stat-num" id="oBookings">—</div><div class="stat-sub">Paid + confirmed</div></div>
+        <div class="stat-card blue"><div class="stat-label">Active Events</div><div class="stat-num" id="oEvents">—</div><div class="stat-sub">Published now</div></div>
+        <div class="stat-card yellow"><div class="stat-label">Pending Bookings</div><div class="stat-num" id="oPending">—</div><div class="stat-sub">Need attention</div></div>
+        <div class="stat-card red"><div class="stat-label">Total Users</div><div class="stat-num" id="oUsers">—</div><div class="stat-sub">Vendors + organizers</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="table-card">
+          <div class="table-head"><div><div class="table-head-title">Recent Bookings</div><div class="table-head-sub">Last 10 across all events</div></div></div>
+          <table>
+            <thead><tr><th>Ref</th><th>Vendor</th><th>Booth</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody id="oRecentBookings"><tr><td colspan="5"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><div><div class="table-head-title">Live Activity Feed</div><div class="table-head-sub">Real-time events</div></div></div>
+          <div class="activity-feed" id="oActivity" style="padding:0 16px;">
+            <div class="loading"><div class="spinner"></div> Connecting...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL BOOKINGS -->
+    <div class="page" id="page-bookings">
+      <div class="page-header">
+        <div><div class="page-title">All Bookings</div><div class="page-sub">Full booking history across every event</div></div>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" placeholder="Search by ref, email, business, event..." oninput="filterBookings(this.value)" id="bookingSearch">
+        <select class="filter-select" onchange="filterBookingsByStatus(this.value)">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="paid">Paid</option>
+          <option value="checked_in">Checked in</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="refunded">Refunded</option>
+        </select>
+        <button class="action-btn" onclick="exportBookings()">↓ Export CSV</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Ref</th><th>Vendor Email</th><th>Business</th><th>Event</th><th>Booth</th><th>Total</th><th>Fee</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="bookingsTable"><tr><td colspan="10"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOOKING LOOKUP -->
+    <div class="page" id="page-lookup">
+      <div class="page-header">
+        <div><div class="page-title">Booking Lookup</div><div class="page-sub">Find any booking instantly by reference code or email</div></div>
+      </div>
+      <div class="search-bar" style="max-width:500px;">
+        <input class="search-input" id="lookupInput" placeholder="Enter REF code (e.g. VM-9A52276D) or email..." onkeydown="if(event.key==='Enter')lookupBooking()">
+        <button class="action-btn primary" onclick="lookupBooking()">Look up →</button>
+      </div>
+      <div id="lookupResult"></div>
+    </div>
+
+    <!-- ALL USERS -->
+    <div class="page" id="page-users">
+      <div class="page-header">
+        <div><div class="page-title">All Users</div><div class="page-sub">Everyone on the platform</div></div>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" placeholder="Search by email or name..." oninput="filterUsers(this.value)">
+        <select class="filter-select" onchange="filterUsersByRole(this.value)">
+          <option value="">All roles</option>
+          <option value="vendor">Vendor</option>
+          <option value="organizer">Organizer</option>
+          <option value="city_admin">City Admin</option>
+          <option value="super_admin">Super Admin</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Email</th><th>Name</th><th>Company</th><th>Role</th><th>Bookings</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="usersTable"><tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ORGANIZERS -->
+    <div class="page" id="page-organizers">
+      <div class="page-header">
+        <div><div class="page-title">Organizers</div><div class="page-sub">Event organizers and their performance</div></div>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Email</th><th>Events</th><th>Total Booths</th><th>Bookings</th><th>GMV</th><th>VM Cut (7%)</th><th>Organizer Net</th><th>Actions</th></tr></thead>
+          <tbody id="organizersTable"><tr><td colspan="8"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ALL EVENTS -->
+    <div class="page" id="page-events">
+      <div class="page-header">
+        <div><div class="page-title">All Events</div><div class="page-sub">Every event on the platform</div></div>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Event</th><th>Organizer</th><th>Venue</th><th>Booths</th><th>Booked</th><th>Revenue</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="csEventsTable"><tr><td colspan="8"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ALL BOOTHS -->
+    <div class="page" id="page-booths">
+      <div class="page-header">
+        <div><div class="page-title">All Booths</div><div class="page-sub">Every booth across every event</div></div>
+      </div>
+      <div class="search-bar">
+        <select class="filter-select" onchange="filterCSBoothsByStatus(this.value)">
+          <option value="">All statuses</option>
+          <option value="available">Available</option>
+          <option value="reserved">Reserved</option>
+          <option value="booked">Booked</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Ref</th><th>Name</th><th>Event</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="csBoothsTable"><tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ACTIVITY -->
+    <div class="page" id="page-activity">
+      <div class="page-header">
+        <div><div class="page-title">Live Activity</div><div class="page-sub">Real-time platform events</div></div>
+        <button class="action-btn" onclick="clearActivity()">Clear</button>
+      </div>
+      <div class="table-card" style="padding:16px;">
+        <div class="activity-feed" id="activityFeed">
+          <div class="loading"><div class="spinner"></div> Listening for activity...</div>        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">User Details</div>
+      <button class="modal-x" onclick="closeModal('userModal')">✕</button>
+    </div>
+    <div class="modal-body" id="userModalBody"></div>
+    <div class="modal-foot">
+      <button class="action-btn" style="flex:1" onclick="closeModal('userModal')">Close</button>
+      <button class="action-btn primary" style="flex:1" id="userModalSave" onclick="saveUserChanges()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL  = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser = null;
+let allBookings = [], allUsers = [], allEvents = [], allBooths = [];
+let filteredBookings = [], filteredUsers = [], filteredBooths = [];
+let activityLog = [];
+let editingUserId = null;
+
+// ── AUTH ──
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'venue_map_editor.html'; return; }
+  currentUser = session.user;
+  document.getElementById('navUser').textContent = currentUser.email;
+  document.getElementById('overviewDate').textContent = new Date().toLocaleDateString('en-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  loadAll();
+  startRealtimeListeners();
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.href = 'venue_map_editor.html';
+}
+
+// ── LOAD ALL ──
+async function loadAll() {
+  await Promise.all([loadBookings(), loadUsers(), loadEvents(), loadBooths()]);
+  renderOverview();
+  updateSidebarCounts();
+}
+
+async function loadBookings() {
+  const { data } = await sb.from('bookings')
+    .select('*, booths(booth_ref,name,price), events(name)')
+    .order('created_at', { ascending: false });
+  allBookings = data || [];
+  filteredBookings = [...allBookings];
+  renderBookings();
+}
+
+async function loadUsers() {
+  const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+  allUsers = data || [];
+  filteredUsers = [...allUsers];
+  renderUsers();
+  renderOrganizers();
+}
+
+async function loadEvents() {
+  const { data } = await sb.from('events')
+    .select('*, venues(name), booths(id,price,status), organizer_id')
+    .order('created_at', { ascending: false });
+  allEvents = data || [];
+  renderCSEvents();
+}
+
+async function loadBooths() {
+  const { data } = await sb.from('booths')
+    .select('*, events(name)')
+    .order('event_id').order('booth_ref');
+  allBooths = data || [];
+  filteredBooths = [...allBooths];
+  renderCSBooths();
+}
+
+// ── SIDEBAR COUNTS ──
+function updateSidebarCounts() {
+  document.getElementById('sbBookings').textContent = allBookings.length;
+  document.getElementById('sbUsers').textContent    = allUsers.length;
+  document.getElementById('sbEvents').textContent   = allEvents.length;
+}
+
+// ── OVERVIEW ──
+function renderOverview() {
+  // Total GMV = sum of all booth prices across published events
+  const gmv         = allEvents.reduce((s,e) => s + (e.booths?.reduce((bs,b) => bs + Number(b.price), 0) || 0), 0);
+  // VM revenue = 7% of GMV
+  const vmRevenue   = Math.round(gmv * 0.07);
+  // Organizer revenue = GMV minus VM cut
+  const orgRevenue  = gmv - vmRevenue;
+  const confirmed   = allBookings.filter(b => ['confirmed','paid','checked_in'].includes(b.status)).length;
+  const published   = allEvents.filter(e => e.status === 'published').length;
+  const pending     = allBookings.filter(b => b.status === 'pending').length;
+
+  const fmt = v => v >= 1000 ? `$${(v/1000).toFixed(1)}k` : `$${v}`;
+
+  document.getElementById('oRevenue').textContent   = fmt(orgRevenue);
+  document.getElementById('oVMRevenue').textContent = fmt(vmRevenue);
+  document.getElementById('oBookings').textContent  = confirmed;
+  document.getElementById('oEvents').textContent    = published;
+  document.getElementById('oPending').textContent   = pending;
+  document.getElementById('oUsers').textContent     = allUsers.length;
+
+  const tbody = document.getElementById('oRecentBookings');
+  tbody.innerHTML = allBookings.slice(0,10).map(b => `<tr>
+    <td class="td-mono">${b.id.slice(0,8).toUpperCase()}</td>
+    <td>${b.contact_email || '—'}</td>
+    <td class="td-mono">${b.booths?.booth_ref || '—'}</td>
+    <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
+    <td>${badge(b.status)}</td>
+  </tr>`).join('') || '<tr><td colspan="5" class="empty">No bookings yet</td></tr>';
+}
+
+// ── REALTIME ──
+function startRealtimeListeners() {
+  sb.channel('cs-realtime')
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'bookings' }, payload => {
+      addActivity('＋', `New booking`, `${payload.new.contact_email || 'Vendor'} booked booth — $${Number(payload.new.total_amount).toLocaleString()}`, 'green');
+      allBookings.unshift(payload.new);
+      filteredBookings = [...allBookings];
+      renderBookings();
+      renderOverview();
+      updateSidebarCounts();
+    })
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'bookings' }, payload => {
+      addActivity('↻', `Booking updated`, `Status changed to ${payload.new.status}`, 'blue');
+      const idx = allBookings.findIndex(b => b.id === payload.new.id);
+      if (idx >= 0) allBookings[idx] = { ...allBookings[idx], ...payload.new };
+      filteredBookings = [...allBookings];
+      renderBookings();
+      renderOverview();
+    })
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'profiles' }, payload => {
+      addActivity('◎', `New user signed up`, payload.new.email, 'amber');
+      allUsers.unshift(payload.new);
+      filteredUsers = [...allUsers];
+      renderUsers();
+      updateSidebarCounts();
+    })
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'events' }, payload => {
+      addActivity('◆', `New event published`, payload.new.name, 'green');
+    })
+    .subscribe();
+}
+
+function addActivity(icon, title, detail, color) {
+  const colors = { green:'#1a6b3c', blue:'#1d4ed8', amber:'#d4620a', red:'#c0392b' };
+  const item = { icon, title, detail, color: colors[color] || '#9a9690', time: new Date() };
+  activityLog.unshift(item);
+  if (activityLog.length > 50) activityLog.pop();
+  renderActivity();
+}
+
+function renderActivity() {
+  const feed = document.getElementById('oActivity');
+  const feed2 = document.getElementById('activityFeed');
+  const html = activityLog.length === 0
+    ? '<div class="loading"><div class="spinner"></div> Listening...</div>'
+    : activityLog.slice(0,15).map(a => `
+        <div class="activity-item">
+          <div class="activity-dot" style="background:${a.color}"></div>
+          <div class="activity-content">
+            <div class="activity-text"><strong>${a.title}</strong> — ${a.detail}</div>
+            <div class="activity-time">${fmtTime(a.time)}</div>
+          </div>
+        </div>`).join('');
+  if (feed) feed.innerHTML = html;
+  if (feed2) feed2.innerHTML = activityLog.length === 0
+    ? '<div class="loading"><div class="spinner"></div> Listening for activity...</div>'
+    : activityLog.map(a => `
+        <div class="activity-item">
+          <div class="activity-dot" style="background:${a.color}"></div>
+          <div class="activity-content">
+            <div class="activity-text"><strong>${a.title}</strong> — ${a.detail}</div>
+            <div class="activity-time">${fmtTime(a.time)}</div>
+          </div>
+        </div>`).join('');
+}
+
+function clearActivity() { activityLog = []; renderActivity(); }
+
+// ── RENDER BOOKINGS ──
+function renderBookings() {
+  const tbody = document.getElementById('bookingsTable');
+  if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="10"><div class="empty">No bookings found</div></td></tr>`; return; }
+  tbody.innerHTML = filteredBookings.map(b => `<tr>
+    <td class="td-mono" style="color:var(--amber);font-weight:700;">VM-${b.id.slice(0,8).toUpperCase()}</td>
+    <td class="td-bold">${b.contact_email || '—'}</td>
+    <td>${b.business_name || '—'}</td>
+    <td>${b.events?.name || '—'}</td>
+    <td class="td-mono">${b.booths?.booth_ref || '—'}</td>
+    <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
+    <td class="td-mono" style="color:var(--ink3);">$${Number(b.platform_fee).toLocaleString()}</td>
+    <td>${badge(b.status)}</td>
+    <td class="td-mono">${fmtDate(b.created_at)}</td>
+    <td><div class="td-actions">
+      ${b.status === 'pending'    ? `<button class="action-btn sm success" onclick="setBookingStatus('${b.id}','confirmed')">Confirm</button>` : ''}
+      ${b.status === 'confirmed'  ? `<button class="action-btn sm success" onclick="setBookingStatus('${b.id}','paid')">Mark Paid</button>` : ''}
+      ${b.status === 'paid'       ? `<button class="action-btn sm success" onclick="setBookingStatus('${b.id}','checked_in')">Check In</button>` : ''}
+      ${!['cancelled','refunded'].includes(b.status) ? `<button class="action-btn sm danger" onclick="setBookingStatus('${b.id}','cancelled')">Cancel</button>` : ''}
+      ${b.status === 'cancelled'  ? `<button class="action-btn sm danger" onclick="setBookingStatus('${b.id}','refunded')">Refund</button>` : ''}
+    </div></td>
+  </tr>`).join('');
+}
+
+// ── RENDER USERS ──
+function renderUsers() {
+  const tbody = document.getElementById('usersTable');
+  if (filteredUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No users found</div></td></tr>`; return; }
+  tbody.innerHTML = filteredUsers.map(u => {
+    const bookingCount = allBookings.filter(b => b.vendor_id === u.id).length;
+    return `<tr>
+      <td class="td-bold">${u.email}</td>
+      <td>${u.full_name || '—'}</td>
+      <td>${u.company || '—'}</td>
+      <td>${roleBadge(u.role)}</td>
+      <td class="td-mono">${bookingCount}</td>
+      <td class="td-mono">${fmtDate(u.created_at)}</td>
+      <td><div class="td-actions">
+        <button class="action-btn sm" onclick="openUserModal('${u.id}')">Edit</button>
+        ${u.role !== 'organizer' ? `<button class="action-btn sm success" onclick="setUserRole('${u.id}','organizer')">→ Organizer</button>` : ''}
+        ${u.role !== 'vendor'    ? `<button class="action-btn sm" onclick="setUserRole('${u.id}','vendor')">→ Vendor</button>` : ''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── RENDER ORGANIZERS ──
+function renderOrganizers() {
+  const organizers = allUsers.filter(u => ['organizer','city_admin','super_admin'].includes(u.role));
+  const tbody = document.getElementById('organizersTable');
+  if (organizers.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty">No organizers yet. Promote a user to organizer from the Users page.</div></td></tr>`; return; }
+  tbody.innerHTML = organizers.map(u => {
+    const events   = allEvents.filter(e => e.organizer_id === u.id);
+    const booths   = events.flatMap(e => e.booths || []);
+    const gmv      = booths.reduce((s, b) => s + Number(b.price), 0);
+    const vmCut    = Math.round(gmv * 0.07);
+    const net      = gmv - vmCut;
+    const bookings = allBookings.filter(b => events.some(e => e.id === b.event_id)).length;
+    const fmt = v => v >= 1000 ? `$${(v/1000).toFixed(1)}k` : `$${v}`;
+    return `<tr>
+      <td class="td-bold">${u.email}</td>
+      <td class="td-mono">${events.length}</td>
+      <td class="td-mono">${booths.length}</td>
+      <td class="td-mono">${bookings}</td>
+      <td class="td-mono">${fmt(gmv)}</td>
+      <td class="td-mono" style="color:var(--amber);">${fmt(vmCut)}</td>
+      <td class="td-mono" style="color:var(--green);">${fmt(net)}</td>
+      <td><button class="action-btn sm" onclick="openUserModal('${u.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── RENDER CS EVENTS ──
+function renderCSEvents() {
+  const tbody = document.getElementById('csEventsTable');
+  if (allEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty">No events yet</div></td></tr>`; return; }
+  tbody.innerHTML = allEvents.map(e => {
+    const booths   = e.booths || [];
+    const booked   = booths.filter(b => ['booked','reserved'].includes(b.status)).length;
+    const revenue  = booths.reduce((s, b) => s + Number(b.price), 0);
+    const org      = allUsers.find(u => u.id === e.organizer_id);
+    return `<tr>
+      <td class="td-bold">${e.name}</td>
+      <td>${org?.email || '—'}</td>
+      <td>${e.venues?.name || '—'}</td>
+      <td class="td-mono">${booths.length}</td>
+      <td class="td-mono">${booked} / ${booths.length}</td>
+      <td class="td-mono">$${revenue.toLocaleString()}</td>
+      <td>${badge(e.status)}</td>
+      <td><div class="td-actions">
+        <button class="action-btn sm ${e.status === 'published' ? 'danger' : 'success'}" onclick="toggleEvent('${e.id}','${e.status}')">
+          ${e.status === 'published' ? 'Unpublish' : 'Publish'}
+        </button>
+        <button class="action-btn sm danger" onclick="deleteEvent('${e.id}')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── RENDER CS BOOTHS ──
+function renderCSBooths() {
+  const tbody = document.getElementById('csBoothsTable');
+  if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No booths</div></td></tr>`; return; }
+  tbody.innerHTML = filteredBooths.map(b => `<tr>
+    <td class="td-mono">${b.booth_ref}</td>
+    <td class="td-bold">${b.name}</td>
+    <td>${b.events?.name || '—'}</td>
+    <td>${b.category}</td>
+    <td class="td-mono">$${Number(b.price).toLocaleString()}</td>
+    <td>${badge(b.status)}</td>
+    <td><div class="td-actions">
+      ${b.status !== 'available'   ? `<button class="action-btn sm success" onclick="setBoothStatus('${b.id}','available')">Available</button>` : ''}
+      ${b.status !== 'maintenance' ? `<button class="action-btn sm danger" onclick="setBoothStatus('${b.id}','maintenance')">Maintenance</button>` : ''}
+    </div></td>
+  </tr>`).join('');
+}
+
+// ── BOOKING LOOKUP ──
+async function lookupBooking() {
+  const q = document.getElementById('lookupInput').value.trim();
+  if (!q) return;
+
+  const result = document.getElementById('lookupResult');
+  result.innerHTML = '<div class="loading"><div class="spinner"></div> Looking up...</div>';
+
+  // Search by ref (UUID prefix) or email
+  const isRef   = q.startsWith('VM-') || q.startsWith('vm-');
+  const refPart = isRef ? q.replace(/vm-/i, '').toLowerCase() : null;
+
+  let booking = null;
+
+  if (isRef) {
+    const { data } = await sb.from('bookings')
+      .select('*, booths(booth_ref,name,price,category), events(name,start_date)')
+      .ilike('id', `${refPart}%`)
+      .single();
+    booking = data;
+  } else {
+    const { data } = await sb.from('bookings')
+      .select('*, booths(booth_ref,name,price,category), events(name,start_date)')
+      .eq('contact_email', q)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    booking = data;
+  }
+
+  if (!booking) {
+    result.innerHTML = `<div class="note-box red">No booking found for <strong>${q}</strong>. Double-check the reference code or email.</div>`;
+    return;
+  }
+
+  result.innerHTML = `
+    <div class="booking-detail">
+      <div class="bd-header">
+        <div>
+          <div class="bd-ref">VM-${booking.id.slice(0,8).toUpperCase()}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Booking ID: ${booking.id}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${badge(booking.status)}
+          ${booking.status === 'pending'   ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','confirmed');lookupBooking()">Confirm</button>` : ''}
+          ${booking.status === 'confirmed' ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','paid');lookupBooking()">Mark Paid</button>` : ''}
+          ${booking.status === 'paid'      ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','checked_in');lookupBooking()">Check In ✓</button>` : ''}
+          ${!['cancelled','refunded'].includes(booking.status) ? `<button class="action-btn danger" onclick="setBookingStatus('${booking.id}','cancelled');lookupBooking()">Cancel</button>` : ''}
+        </div>
+      </div>
+      <div class="bd-grid">
+        <div><div class="bd-item-label">Vendor Email</div><div class="bd-item-val">${booking.contact_email || '—'}</div></div>
+        <div><div class="bd-item-label">Business Name</div><div class="bd-item-val">${booking.business_name || '—'}</div></div>
+        <div><div class="bd-item-label">Business Type</div><div class="bd-item-val">${booking.business_type || '—'}</div></div>
+        <div><div class="bd-item-label">Phone</div><div class="bd-item-val">${booking.contact_phone || '—'}</div></div>
+        <div><div class="bd-item-label">Event</div><div class="bd-item-val">${booking.events?.name || '—'}</div></div>
+        <div><div class="bd-item-label">Booth</div><div class="bd-item-val">${booking.booths?.booth_ref || '—'} — ${booking.booths?.name || ''}</div></div>
+        <div><div class="bd-item-label">Booth Price</div><div class="bd-item-val">$${Number(booking.booth_price).toLocaleString()}</div></div>
+        <div><div class="bd-item-label">Platform Fee (7%)</div><div class="bd-item-val">$${Number(booking.platform_fee).toLocaleString()}</div></div>
+        <div><div class="bd-item-label">Total Charged</div><div class="bd-item-val" style="color:var(--amber);">$${Number(booking.total_amount).toLocaleString()}</div></div>
+        <div><div class="bd-item-label">Booked At</div><div class="bd-item-val">${fmtDateTime(booking.created_at)}</div></div>
+        <div><div class="bd-item-label">Paid At</div><div class="bd-item-val">${booking.paid_at ? fmtDateTime(booking.paid_at) : '—'}</div></div>
+        <div><div class="bd-item-label">Checked In</div><div class="bd-item-val">${booking.checked_in_at ? fmtDateTime(booking.checked_in_at) : '—'}</div></div>
+        ${booking.notes ? `<div style="grid-column:1/-1"><div class="bd-item-label">Notes</div><div class="bd-item-val">${booking.notes}</div></div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── USER MODAL ──
+function openUserModal(id) {
+  const u = allUsers.find(u => u.id === id);
+  if (!u) return;
+  editingUserId = id;
+  document.getElementById('userModalBody').innerHTML = `
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="umEmail" value="${u.email}" readonly style="opacity:0.6;"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="umName" value="${u.full_name || ''}"></div>
+      <div class="form-group"><label class="form-label">Company</label><input class="form-input" id="umCompany" value="${u.company || ''}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="umPhone" value="${u.phone || ''}"></div>
+    <div class="form-group"><label class="form-label">Role</label>
+      <select class="form-select" id="umRole">
+        <option value="vendor" ${u.role==='vendor'?'selected':''}>Vendor</option>
+        <option value="organizer" ${u.role==='organizer'?'selected':''}>Organizer</option>
+        <option value="city_admin" ${u.role==='city_admin'?'selected':''}>City Admin</option>
+        <option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Admin</option>
+      </select>
+    </div>
+    <div class="note-box" style="margin-top:8px;">Joined: ${fmtDateTime(u.created_at)} · Bookings: ${allBookings.filter(b=>b.vendor_id===u.id).length}</div>`;
+  openModal('userModal');
+}
+
+async function saveUserChanges() {
+  if (!editingUserId) return;
+  const updates = {
+    full_name: document.getElementById('umName').value.trim(),
+    company:   document.getElementById('umCompany').value.trim(),
+    phone:     document.getElementById('umPhone').value.trim(),
+    role:      document.getElementById('umRole').value,
+  };
+  const { error } = await sb.from('profiles').update(updates).eq('id', editingUserId);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', 'User updated');
+  closeModal('userModal');
+  await loadUsers();
+}
+
+// ── ACTIONS ──
+async function setBookingStatus(id, status) {
+  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `Booking → ${status}`);
+  await loadBookings();
+  renderOverview();
+}
+
+async function setBoothStatus(id, status) {
+  const { error } = await sb.from('booths').update({ status }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `Booth → ${status}`);
+  await loadBooths();
+}
+
+async function setUserRole(id, role) {
+  const { error } = await sb.from('profiles').update({ role }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `Role → ${role}`);
+  await loadUsers();
+}
+
+async function toggleEvent(id, currentStatus) {
+  const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+  const { error } = await sb.from('events').update({ status: newStatus }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `Event ${newStatus}`);
+  await loadEvents();
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Delete this event and all its booths? This cannot be undone.')) return;
+  const { error } = await sb.from('events').delete().eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('×', 'Event deleted');
+  await loadEvents();
+}
+
+// ── FILTERS ──
+function filterBookings(q) {
+  const ql = q.toLowerCase();
+  filteredBookings = allBookings.filter(b =>
+    b.id?.toLowerCase().includes(ql) ||
+    b.contact_email?.toLowerCase().includes(ql) ||
+    b.business_name?.toLowerCase().includes(ql) ||
+    b.events?.name?.toLowerCase().includes(ql) ||
+    b.booths?.booth_ref?.toLowerCase().includes(ql)
+  );
+  renderBookings();
+}
+
+function filterBookingsByStatus(status) {
+  filteredBookings = status ? allBookings.filter(b => b.status === status) : [...allBookings];
+  renderBookings();
+}
+
+function filterUsers(q) {
+  const ql = q.toLowerCase();
+  filteredUsers = allUsers.filter(u => u.email?.toLowerCase().includes(ql) || u.full_name?.toLowerCase().includes(ql));
+  renderUsers();
+}
+
+function filterUsersByRole(role) {
+  filteredUsers = role ? allUsers.filter(u => u.role === role) : [...allUsers];
+  renderUsers();
+}
+
+function filterCSBoothsByStatus(status) {
+  filteredBooths = status ? allBooths.filter(b => b.status === status) : [...allBooths];
+  renderCSBooths();
+}
+
+// ── EXPORT ──
+function exportBookings() {
+  const rows = [['Ref','Email','Business','Event','Booth','Total','Fee','Status','Date']];
+  filteredBookings.forEach(b => rows.push([
+    `VM-${b.id.slice(0,8).toUpperCase()}`,
+    b.contact_email || '', b.business_name || '',
+    b.events?.name || '', b.booths?.booth_ref || '',
+    b.total_amount, b.platform_fee, b.status,
+    fmtDate(b.created_at)
+  ]));
+  const csv  = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `venuemap-bookings-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('↓', 'Bookings exported');
+}
+
+// ── HELPERS ──
+function badge(status) {
+  const map = {
+    published:'bg', draft:'bgr', cancelled:'br', completed:'ba',
+    available:'bg', reserved:'by', booked:'br', maintenance:'bgr',
+    pending:'by', confirmed:'ba', paid:'bg', checked_in:'bg', refunded:'bgr'
+  };
+  return `<span class="badge ${map[status]||'bgr'}">${status}</span>`;
+}
+
+function roleBadge(role) {
+  const map = { vendor:'bgr', organizer:'ba', city_admin:'bg', super_admin:'br' };
+  return `<span class="badge ${map[role]||'bgr'}">${role}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-CA', { month:'short', day:'numeric', year:'numeric' });
+}
+
+function fmtDateTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('en-CA', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function fmtTime(d) {
+  return new Date(d).toLocaleTimeString('en-CA', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+// ── NAVIGATION ──
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${icon}</span> ${msg}`;
+  t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+initAuth();
+</script>
+</body>
+</html>
