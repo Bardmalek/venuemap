@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VenueMap — Book Your Booth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #f5f2ed;
+  --bg2: #edeae4;
+  --black: #0f0e0c;
+  --ink: #1a1916;
+  --ink2: #4a4843;
+  --ink3: #9a9690;
+  --border: #d8d4cc;
+  --border2: #c8c4bc;
+  --amber: #d4620a;
+  --amber-light: #f07030;
+  --amber-bg: #fdf0e8;
+  --amber-border: #f0c8a8;
+  --green: #1a6b3c;
+  --green-bg: #e8f5ee;
+  --white: #fefcfa;
+  --serif: 'Instrument Serif', serif;
+  --sans: 'Syne', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; overflow-x: hidden; }
+
+/* CURSOR */
+*, a, button { cursor: none !important; }
+#cursor { position: fixed; width: 10px; height: 10px; background: var(--amber); border-radius: 50%; pointer-events: none; z-index: 9999; transition: width 0.2s, height 0.2s, background 0.2s; transform: translate(-50%,-50%); top: 0; left: 0; will-change: transform; }
+#cursor.hover { width: 30px; height: 30px; background: transparent; border: 1.5px solid var(--amber); }
+
+/* NAV */
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 60px; background: rgba(245,242,237,0.93); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.logo { font-family: var(--sans); font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.logo-mark { width: 24px; height: 24px; background: var(--amber); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--white); font-size: 13px; font-weight: 800; }
+.nav-center { display: flex; align-items: center; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: 100px; padding: 4px; }
+.nav-pill { padding: 5px 16px; border-radius: 100px; font-size: 12px; font-weight: 600; color: var(--ink2); text-decoration: none; transition: all 0.2s; letter-spacing: 0.2px; }
+.nav-pill:hover, .nav-pill.active { background: var(--white); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.btn-sm { padding: 8px 18px; border-radius: 100px; font-family: var(--sans); font-size: 12px; font-weight: 700; border: none; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border2); color: var(--ink2); }
+.btn-outline:hover { border-color: var(--ink2); color: var(--ink); }
+.btn-fill { background: var(--ink); color: var(--white); }
+.btn-fill:hover { background: var(--amber); }
+
+/* HERO */
+.hero { min-height: 100vh; padding: 100px 48px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; position: relative; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 80% 50%, rgba(212,98,10,0.07) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 20% 80%, rgba(212,98,10,0.04) 0%, transparent 60%); }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 48px 48px; opacity: 0.4; mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%); }
+.hero-left { position: relative; z-index: 2; }
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--amber-bg); border: 1px solid var(--amber-border); border-radius: 100px; padding: 6px 14px; font-size: 11px; font-weight: 700; color: var(--amber); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 28px; opacity: 0; animation: fadeUp 0.5s 0.1s forwards; }
+.tag-dot { width: 6px; height: 6px; background: var(--amber); border-radius: 50%; animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.hero-h1 { font-family: var(--serif); font-size: clamp(52px, 6vw, 86px); line-height: 1.0; color: var(--ink); letter-spacing: -1px; margin-bottom: 24px; opacity: 0; animation: fadeUp 0.6s 0.2s forwards; }
+.hero-h1 em { font-style: italic; color: var(--amber); }
+.hero-p { font-size: 16px; color: var(--ink2); line-height: 1.75; max-width: 420px; margin-bottom: 40px; font-weight: 400; opacity: 0; animation: fadeUp 0.6s 0.35s forwards; }
+.hero-actions { display: flex; gap: 12px; align-items: center; opacity: 0; animation: fadeUp 0.6s 0.5s forwards; }
+.btn-hero { padding: 14px 28px; border-radius: 100px; font-family: var(--sans); font-size: 14px; font-weight: 700; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.25s; }
+.btn-hero-primary { background: var(--ink); color: var(--white); }
+.btn-hero-primary:hover { background: var(--amber); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(212,98,10,0.25); }
+.btn-hero-ghost { background: transparent; color: var(--ink2); border: 1.5px solid var(--border2); }
+.btn-hero-ghost:hover { border-color: var(--ink2); color: var(--ink); }
+.hero-proof { margin-top: 56px; display: flex; gap: 32px; opacity: 0; animation: fadeUp 0.6s 0.65s forwards; }
+.proof-num { font-family: var(--serif); font-size: 36px; color: var(--ink); line-height: 1; }
+.proof-label { font-size: 11px; color: var(--ink3); margin-top: 4px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* HERO RIGHT CARD */
+.hero-right { position: relative; z-index: 2; opacity: 0; animation: fadeUp 0.7s 0.4s forwards; }
+.featured-card { background: var(--white); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.fc-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.fc-org { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); }
+.fc-live { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--green); background: var(--green-bg); padding: 3px 10px; border-radius: 100px; letter-spacing: 0.5px; }
+.live-dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; animation: blink 1.5s infinite; }
+.fc-body { padding: 18px 22px; }
+.fc-title { font-family: var(--serif); font-size: 30px; color: var(--ink); line-height: 1.1; margin-bottom: 12px; }
+.fc-meta { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.fc-meta-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink2); }
+
+/* Mini map */
+.fc-map { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; height: 150px; position: relative; overflow: hidden; margin-bottom: 14px; }
+.fc-map-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 18px 18px; opacity: 0.5; }
+.mini-booth { position: absolute; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 7px; font-family: var(--mono); font-weight: 500; transition: all 0.2s; }
+.mini-booth:hover { filter: brightness(1.15); transform: scale(1.08); z-index: 10; }
+.fc-map-label { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); background: rgba(245,242,237,0.92); padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+.fc-progress-top { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
+.fc-progress-label { color: var(--ink2); font-weight: 600; }
+.fc-progress-val { color: var(--amber); font-weight: 700; font-family: var(--mono); }
+.progress-bar { height: 4px; background: var(--bg2); border-radius: 100px; overflow: hidden; margin-bottom: 14px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--amber), var(--amber-light)); border-radius: 100px; width: 55%; animation: fillBar 1.2s 0.8s both; }
+@keyframes fillBar { from{width:0} to{width:55%} }
+.fc-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.fc-price { font-size: 11px; color: var(--ink3); }
+.fc-price strong { font-size: 20px; font-family: var(--serif); color: var(--ink); font-weight: 400; }
+.btn-book-now { background: var(--amber); color: var(--white); border: none; padding: 10px 20px; border-radius: 100px; font-family: var(--sans); font-size: 12px; font-weight: 700; transition: all 0.2s; }
+.btn-book-now:hover { background: var(--amber-light); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(212,98,10,0.3); }
+.hero-float-badge { position: absolute; top: -14px; right: -14px; background: var(--ink); color: var(--white); border-radius: 14px; padding: 12px 16px; font-size: 11px; font-weight: 600; line-height: 1.4; box-shadow: 0 8px 24px rgba(0,0,0,0.15); animation: float 3s ease-in-out infinite; max-width: 140px; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.float-num { font-family: var(--serif); font-size: 22px; color: var(--amber-light); display: block; }
+
+/* TICKER */
+.ticker { background: var(--ink); color: var(--white); padding: 11px 0; overflow: hidden; white-space: nowrap; }
+.ticker-inner { display: inline-flex; animation: ticker 28s linear infinite; }
+@keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.ticker-item { display: inline-flex; align-items: center; gap: 12px; padding: 0 28px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); }
+.ticker-item span { color: var(--amber-light); }
+.ticker-dot { width: 4px; height: 4px; background: var(--amber); border-radius: 50%; flex-shrink: 0; }
+
+/* SECTIONS */
+.section { padding: 100px 48px; }
+.section-tag { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.section-tag::before { content:''; display:block; width:24px; height:1.5px; background:var(--amber); }
+.section-h2 { font-family: var(--serif); font-size: clamp(36px, 4vw, 58px); line-height: 1.1; color: var(--ink); letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-p { font-size: 15px; color: var(--ink2); max-width: 440px; line-height: 1.75; }
+
+/* STEPS */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 64px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.step { background: var(--white); padding: 36px 28px; transition: background 0.2s; }
+.step:hover { background: var(--amber-bg); }
+.step-num { font-family: var(--serif); font-size: 52px; color: var(--border2); line-height: 1; margin-bottom: 14px; transition: color 0.2s; }
+.step:hover .step-num { color: var(--amber-border); }
+.step-icon { font-size: 26px; margin-bottom: 10px; }
+.step-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.step-desc { font-size: 13px; color: var(--ink2); line-height: 1.65; }
+
+/* EVENTS */
+.events-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.events-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px; }
+.events-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; }
+.event-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: all 0.25s; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
+.event-card:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,0.08); border-color: var(--border2); }
+.event-card.featured { grid-row: span 2; }
+.event-visual { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.event-card.featured .event-visual { height: 220px; }
+.event-card:not(.featured) .event-visual { height: 110px; }
+.ev1 { background: linear-gradient(135deg, #1a0800 0%, #3d1500 50%, #0d0800 100%); }
+.ev2 { background: linear-gradient(135deg, #001a0d 0%, #003d1a 50%, #000d08 100%); }
+.ev3 { background: linear-gradient(135deg, #00081a 0%, #001a3d 50%, #000508 100%); }
+.ev4 { background: linear-gradient(135deg, #1a000d 0%, #3d0019 50%, #0d0005 100%); }
+.ev5 { background: linear-gradient(135deg, #1a1000 0%, #3d2800 50%, #0d0800 100%); }
+.event-emoji { font-size: 52px; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.3)); animation: floatSlow 4s ease-in-out infinite; }
+.event-card:not(.featured) .event-emoji { font-size: 34px; }
+@keyframes floatSlow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.event-badge-hot { position: absolute; top: 12px; left: 12px; background: var(--amber); color: var(--white); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; }
+.event-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+.event-card:not(.featured) .event-body { padding: 14px 16px; }
+.event-org { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; }
+.event-title { font-family: var(--serif); font-size: 22px; color: var(--ink); line-height: 1.15; margin-bottom: 10px; }
+.event-card:not(.featured) .event-title { font-size: 15px; }
+.event-details { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.event-detail { font-size: 11px; color: var(--ink2); display: flex; align-items: center; gap: 6px; }
+.event-card:not(.featured) .event-details { display: none; }
+.event-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.event-card:not(.featured) .event-footer { padding-top: 10px; }
+.event-from { font-size: 10px; color: var(--ink3); }
+.event-price { font-family: var(--serif); font-size: 18px; color: var(--ink); }
+.event-card:not(.featured) .event-price { font-size: 15px; }
+.event-spots { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 100px; background: var(--green-bg); color: var(--green); }
+.event-spots.low { background: #fef3e8; color: var(--amber); }
+
+/* FOR SECTION */
+.for-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 56px; }
+.for-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 32px; transition: all 0.2s; position: relative; overflow: hidden; }
+.for-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; opacity:0; transition:opacity 0.2s; }
+.for-card.vendors::before { background: linear-gradient(90deg, var(--amber), var(--amber-light)); }
+.for-card.organizers::before { background: linear-gradient(90deg, #1a6b3c, #2d9b5e); }
+.for-card.city::before { background: linear-gradient(90deg, #1a3d6b, #2d6b9b); }
+.for-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
+.for-card:hover::before { opacity: 1; }
+.for-icon { font-size: 32px; margin-bottom: 14px; }
+.for-who { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
+.for-title { font-family: var(--serif); font-size: 22px; color: var(--ink); margin-bottom: 10px; line-height: 1.2; }
+.for-desc { font-size: 13px; color: var(--ink2); line-height: 1.75; margin-bottom: 18px; }
+.for-features { display: flex; flex-direction: column; gap: 7px; }
+.for-feature { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--ink2); }
+.for-feature::before { content:'→'; color:var(--amber); font-size:11px; margin-top:2px; flex-shrink:0; }
+
+/* STATS BAND */
+.stats-band { background: var(--ink); padding: 64px 48px; }
+.stats-band-inner { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
+.stat-band-item { padding: 40px 32px; background: var(--ink); transition: background 0.2s; }
+.stat-band-item:hover { background: #1a1916; }
+.sbi-num { font-family: var(--serif); font-size: 52px; color: var(--white); line-height: 1; margin-bottom: 6px; }
+.sbi-num em { color: var(--amber-light); font-style: normal; }
+.sbi-label { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 600; letter-spacing: 0.5px; }
+.sbi-sub { font-size: 11px; color: rgba(255,255,255,0.22); margin-top: 4px; }
+
+/* CTA */
+.cta-section { padding: 120px 48px; text-align: center; position: relative; overflow: hidden; }
+.cta-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(212,98,10,0.07) 0%, transparent 70%); }
+.cta-h2 { font-family: var(--serif); font-size: clamp(42px, 5vw, 72px); color: var(--ink); line-height: 1.1; letter-spacing: -0.5px; margin-bottom: 20px; position: relative; }
+.cta-h2 em { font-style: italic; color: var(--amber); }
+.cta-p { font-size: 16px; color: var(--ink2); margin-bottom: 40px; position: relative; }
+.cta-actions { display: flex; gap: 12px; justify-content: center; position: relative; }
+
+/* FOOTER */
+footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
+.footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 48px; padding-bottom: 48px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 32px; }
+.footer-logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.footer-tagline { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.6; max-width: 220px; }
+.footer-col-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.28); margin-bottom: 16px; }
+.footer-col a { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 10px; transition: color 0.15s; }
+.footer-col a:hover { color: var(--white); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; }
+.footer-copy, .footer-made { font-size: 11px; color: rgba(255,255,255,0.22); }
+
+/* ANIMATIONS */
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.reveal { opacity:0; transform:translateY(28px); transition:opacity 0.65s ease, transform 0.65s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="vancouver_platform.html" class="logo"><div class="logo-mark">V</div>VenueMap</a>
+  <div class="nav-center">
+    <a href="#events" class="nav-pill active">Events</a>
+    <a href="#how" class="nav-pill">How it works</a>
+    <a href="venue_map_editor.html" class="nav-pill">For Organizers</a>
+    <a href="#" class="nav-pill">City Portal</a>
+  </div>
+  <div class="nav-right">
+    <a href="venue_map_editor.html" class="btn-sm btn-outline">Sign in</a>
+    <a href="venue_map_editor.html" class="btn-sm btn-fill">List your event →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-left">
+    <div class="hero-tag"><span class="tag-dot"></span>Now live in Metro Vancouver</div>
+    <h1 class="hero-h1">Your booth.<br><em>Your city.</em><br>Your moment.</h1>
+    <p class="hero-p">Vancouver's first unified platform for vendor booth bookings across every festival, market, and cultural event. Find your space, book instantly, grow your brand.</p>
+    <div class="hero-actions">
+      <a href="#events" class="btn-hero btn-hero-primary">Browse open booths →</a>
+      <a href="#how" class="btn-hero btn-hero-ghost">See how it works</a>
+    </div>
+    <div class="hero-proof">
+      <div class="proof-item"><div class="proof-num">9</div><div class="proof-label">Venues mapped</div></div>
+      <div class="proof-item"><div class="proof-num">47</div><div class="proof-label">Events this season</div></div>
+      <div class="proof-item"><div class="proof-num">120k+</div><div class="proof-label">Annual attendees</div></div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div style="position:relative;">
+      <div class="featured-card">
+        <div class="fc-header">
+          <div class="fc-org">TCICS · Burnaby, BC</div>
+          <div class="fc-live"><span class="live-dot"></span>Booking open</div>
+        </div>
+        <div class="fc-body">
+          <div class="fc-title">Chaharshanbe<br>Soori 2026</div>
+          <div class="fc-meta">
+            <div class="fc-meta-row">📅 Tuesday, March 17, 2026 · 4PM–11PM</div>
+            <div class="fc-meta-row">📍 Swangard Stadium, Burnaby</div>
+            <div class="fc-meta-row">👥 30,000+ expected attendees</div>
+          </div>
+          <div class="fc-map">
+            <div class="fc-map-grid"></div>
+            <div class="mini-booth" style="left:5%;top:7%;width:11%;height:15%;background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;color:#22c55e;">A1</div>
+            <div class="mini-booth" style="left:17%;top:7%;width:11%;height:15%;background:rgba(239,68,68,0.2);border:1.5px solid #ef4444;color:#ef4444;">A2</div>
+            <div class="mini-booth" style="left:29%;top:7%;width:11%;height:15%;background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;color:#22c55e;">A3</div>
+            <div class="mini-booth" style="left:41%;top:7%;width:11%;height:15%;background:rgba(234,179,8,0.25);border:1.5px solid #eab308;color:#c49b00;">A4</div>
+            <div class="mini-booth" style="left:53%;top:7%;width:11%;height:15%;background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;color:#22c55e;">A5</div>
+            <div class="mini-booth" style="left:65%;top:7%;width:11%;height:15%;background:rgba(239,68,68,0.2);border:1.5px solid #ef4444;color:#ef4444;">A6</div>
+            <div class="mini-booth" style="left:77%;top:7%;width:11%;height:15%;background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;color:#22c55e;">A7</div>
+            <div class="mini-booth" style="left:5%;top:27%;width:13%;height:17%;background:rgba(212,98,10,0.2);border:1.5px solid #d4620a;color:#d4620a;">B1</div>
+            <div class="mini-booth" style="left:19%;top:27%;width:13%;height:17%;background:rgba(239,68,68,0.2);border:1.5px solid #ef4444;color:#ef4444;">B2</div>
+            <div class="mini-booth" style="left:33%;top:27%;width:13%;height:17%;background:rgba(212,98,10,0.2);border:1.5px solid #d4620a;color:#d4620a;">B3</div>
+            <div class="mini-booth" style="left:47%;top:27%;width:13%;height:17%;background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;color:#22c55e;">B4</div>
+            <div class="mini-booth" style="left:61%;top:27%;width:13%;height:17%;background:rgba(212,98,10,0.2);border:1.5px solid #d4620a;color:#d4620a;">B5</div>
+            <div class="mini-booth" style="left:75%;top:27%;width:13%;height:17%;background:rgba(234,179,8,0.25);border:1.5px solid #eab308;color:#c49b00;">B6</div>
+            <div class="mini-booth" style="left:5%;top:49%;width:11%;height:15%;background:rgba(239,68,68,0.2);border:1.5px solid #ef4444;color:#ef4444;">C1</div>
+            <div class="mini-booth" style="left:17%;top:49%;width:11%;height:15%;background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;color:#22c55e;">C2</div>
+            <div class="mini-booth" style="left:29%;top:49%;width:11%;height:15%;background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;color:#22c55e;">C3</div>
+            <div class="mini-booth" style="left:41%;top:49%;width:11%;height:15%;background:rgba(167,85,247,0.2);border:1.5px solid #a855f7;color:#a855f7;">C4</div>
+            <div class="mini-booth" style="left:53%;top:49%;width:11%;height:15%;background:rgba(167,85,247,0.2);border:1.5px solid #a855f7;color:#a855f7;">C5</div>
+            <div class="mini-booth" style="left:5%;top:69%;width:20%;height:26%;background:rgba(212,98,10,0.15);border:2px solid #d4620a;color:#d4620a;font-size:8px;">VIP 1</div>
+            <div class="mini-booth" style="left:27%;top:69%;width:20%;height:26%;background:rgba(239,68,68,0.12);border:2px solid #ef4444;color:#ef4444;font-size:8px;">VIP 2</div>
+            <div class="mini-booth" style="left:49%;top:69%;width:20%;height:26%;background:rgba(212,98,10,0.15);border:2px solid #d4620a;color:#d4620a;font-size:8px;">VIP 3</div>
+            <div class="mini-booth" style="left:71%;top:69%;width:20%;height:26%;background:rgba(234,179,8,0.18);border:2px solid #eab308;color:#c49b00;font-size:8px;">VIP 4</div>
+            <div class="fc-map-label">🔥 Swangard Stadium · Floor Plan</div>
+          </div>
+          <div class="fc-progress-top">
+            <span class="fc-progress-label">Booths filling up</span>
+            <span class="fc-progress-val">22 of 40 remaining</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+        </div>
+        <div class="fc-footer">
+          <div class="fc-price">From <strong>$399</strong> <span style="font-size:11px;color:var(--ink3)">CAD</span></div>
+          <button class="btn-book-now">Book a booth →</button>
+        </div>
+      </div>
+      <div class="hero-float-badge">
+        <span class="float-num">30k</span>
+        attendees expected this event
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item"><span class="ticker-dot"></span>Chaharshanbe Soori 2026 <span>22 booths left</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Nowruz Bazaar 2026 <span>Opens Feb 1</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Granville Island Market <span>8 spots left</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Richmond Night Market <span>41 spots</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Trout Lake Festival <span>Coming soon</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Hastings Park Expo <span>New event</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Lafarge Lake Summer Fair <span>Coming soon</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Chaharshanbe Soori 2026 <span>22 booths left</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Nowruz Bazaar 2026 <span>Opens Feb 1</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Granville Island Market <span>8 spots left</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Richmond Night Market <span>41 spots</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Trout Lake Festival <span>Coming soon</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Hastings Park Expo <span>New event</span></span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Lafarge Lake Summer Fair <span>Coming soon</span></span>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="reveal">
+    <div class="section-tag">How it works</div>
+    <h2 class="section-h2">From idea to booked<br>in under 5 minutes.</h2>
+    <p class="section-p">No spreadsheets, no back-and-forth emails, no chasing permits. Just pick, pay, and show up.</p>
+  </div>
+  <div class="steps reveal">
+    <div class="step"><div class="step-num">01</div><div class="step-icon">🗺️</div><div class="step-title">Find your event</div><div class="step-desc">Browse upcoming festivals, markets, and cultural events across Metro Vancouver filtered by date, location, and booth type.</div></div>
+    <div class="step"><div class="step-num">02</div><div class="step-icon">📍</div><div class="step-title">Pick your spot</div><div class="step-desc">View the real venue floor plan on satellite imagery. Click any available booth to see its exact size, price, and amenities.</div></div>
+    <div class="step"><div class="step-num">03</div><div class="step-icon">✍️</div><div class="step-title">Apply & pay</div><div class="step-desc">Fill in your business details, upload required documents, sign your contract digitally, and pay securely via Stripe.</div></div>
+    <div class="step"><div class="step-num">04</div><div class="step-icon">✅</div><div class="step-title">Show up & sell</div><div class="step-desc">Receive your QR code confirmation. Scan in on event day and you're ready. Permits handled automatically.</div></div>
+  </div>
+</section>
+
+<!-- EVENTS -->
+<section class="section events-section" id="events">
+  <div class="events-header reveal">
+    <div>
+      <div class="section-tag">Open now</div>
+      <h2 class="section-h2">Upcoming events</h2>
+    </div>
+    <a href="#" class="btn-sm btn-outline">View all events →</a>
+  </div>
+  </div>
+  <!-- LIVE EVENTS GRID — populated by Supabase -->
+  <div class="events-grid" id="eventsGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink3);font-size:13px;">
+      <div style="font-size:32px;margin-bottom:12px;opacity:0.4;">◌</div>
+      Loading events...
+    </div>
+  </div>
+</section>
+
+<!-- FOR WHO -->
+<section class="section">
+  <div class="reveal">
+    <div class="section-tag">Built for everyone</div>
+    <h2 class="section-h2">One platform,<br>three audiences.</h2>
+  </div>
+  <div class="for-grid">
+    <div class="for-card vendors reveal">
+      <div class="for-icon">🛒</div>
+      <div class="for-who">For vendors</div>
+      <div class="for-title">Find your audience, book your space.</div>
+      <div class="for-desc">Stop scrambling for spots through Facebook groups and cold calls. See every available booth in Metro Vancouver in one place.</div>
+      <div class="for-features">
+        <div class="for-feature">Browse real floor plans on satellite maps</div>
+        <div class="for-feature">Pay securely, get confirmed instantly</div>
+        <div class="for-feature">QR code check-in on event day</div>
+        <div class="for-feature">Track all your bookings in one dashboard</div>
+      </div>
+    </div>
+    <div class="for-card organizers reveal reveal-delay-1">
+      <div class="for-icon">🗓️</div>
+      <div class="for-who">For organizers</div>
+      <div class="for-title">Design, publish, and fill your event.</div>
+      <div class="for-desc">Draw your venue layout on a real satellite map. Set prices, publish your event, and watch bookings come in without a single spreadsheet.</div>
+      <div class="for-features">
+        <div class="for-feature">Drag-and-drop booth editor on real maps</div>
+        <div class="for-feature">Automatic payment collection & splits</div>
+        <div class="for-feature">Vendor document collection built in</div>
+        <div class="for-feature">Real-time booking dashboard</div>
+      </div>
+    </div>
+    <div class="for-card city reveal reveal-delay-2">
+      <div class="for-icon">🏛️</div>
+      <div class="for-who">For the city</div>
+      <div class="for-title">Automate permits. Modernize events.</div>
+      <div class="for-desc">Replace manual permit applications with automatic submissions. Every food vendor, fire safety check, and zoning approval flows through one system.</div>
+      <div class="for-features">
+        <div class="for-feature">Auto-submit to Vancouver Coastal Health</div>
+        <div class="for-feature">Fire marshal compliance automation</div>
+        <div class="for-feature">City fee collection & remittance</div>
+        <div class="for-feature">Full audit trail for every event</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-band">
+  <div class="stats-band-inner">
+    <div class="stat-band-item reveal"><div class="sbi-num">9<em>+</em></div><div class="sbi-label">Venues mapped</div><div class="sbi-sub">Across Metro Vancouver</div></div>
+    <div class="stat-band-item reveal reveal-delay-1"><div class="sbi-num"><em>$</em>0</div><div class="sbi-label">Setup cost</div><div class="sbi-sub">Free to list your event</div></div>
+    <div class="stat-band-item reveal reveal-delay-2"><div class="sbi-num">7<em>%</em></div><div class="sbi-label">Platform fee</div><div class="sbi-sub">Only when you book</div></div>
+    <div class="stat-band-item reveal reveal-delay-3"><div class="sbi-num">120<em>k</em></div><div class="sbi-label">Annual attendees</div><div class="sbi-sub">Across all events</div></div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-bg"></div>
+  <h2 class="cta-h2 reveal">Ready to claim<br>your <em>space?</em></h2>
+  <p class="cta-p reveal">Join hundreds of vendors already booking through VenueMap.</p>
+  <div class="cta-actions reveal">
+    <a href="#events" class="btn-hero btn-hero-primary">Browse open booths →</a>
+    <a href="venue_map_editor.html" class="btn-hero btn-hero-ghost">List your event</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div><div class="footer-logo-text">VenueMap</div><div class="footer-tagline">Vancouver's event booth marketplace. Find your space, grow your brand.</div></div>
+    <div class="footer-col"><div class="footer-col-title">Platform</div><a href="#">Browse events</a><a href="#">For vendors</a><a href="venue_map_editor.html">For organizers</a><a href="#">City portal</a></div>
+    <div class="footer-col"><div class="footer-col-title">Company</div><a href="#">About</a><a href="#">Press</a><a href="#">Careers</a><a href="#">Contact</a></div>
+    <div class="footer-col"><div class="footer-col-title">Legal</div><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 VenueMap Inc. All rights reserved.</div>
+    <div class="footer-made">Made in Vancouver 🍁</div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL  = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const BG_CLASSES = ['ev1','ev2','ev3','ev4','ev5'];
+
+// ── Custom cursor ──
+const cursor = document.getElementById('cursor');
+let cursorX = 0, cursorY = 0, rafPending = false;
+
+document.addEventListener('mousemove', e => {
+  cursorX = e.clientX;
+  cursorY = e.clientY;
+  if (!rafPending) {
+    rafPending = true;
+    requestAnimationFrame(() => {
+      cursor.style.transform = `translate(calc(${cursorX}px - 50%), calc(${cursorY}px - 50%))`;
+      rafPending = false;
+    });
+  }
+}, { passive: true });
+
+function addHover(els) {
+  els.forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+  });
+}
+
+addHover(document.querySelectorAll('a,button,.step,.for-card,.stat-band-item'));
+
+// ── Scroll reveal ──
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+// ── Nav active ──
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('.nav-pill');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) current = s.id; });
+  navLinks.forEach(l => {
+    l.classList.remove('active');
+    if (l.getAttribute('href') === `#${current}`) l.classList.add('active');
+  });
+}, { passive: true });
+
+// ── LOAD EVENTS ──
+async function loadEvents() {
+  const grid = document.getElementById('eventsGrid');
+
+  const { data: events, error } = await sb
+    .from('events')
+    .select(`*, venues(name, location), booths(id, price, status)`)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false });
+
+  if (error || !events || events.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink3);">
+        <div style="font-size:48px;margin-bottom:16px;opacity:0.3;">🏪</div>
+        <div style="font-size:15px;font-weight:600;color:var(--ink2);margin-bottom:8px;">No events published yet</div>
+        <div style="font-size:13px;">Use the <a href="venue_map_editor.html" style="color:var(--amber);text-decoration:none;font-weight:600;">Venue Editor</a> to create and publish your first event.</div>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = events.map((ev, i) => {
+    const booths    = ev.booths || [];
+    const available = booths.filter(b => b.status === 'available').length;
+    const minPrice  = booths.length ? Math.min(...booths.map(b => b.price)) : 0;
+    const bgClass   = BG_CLASSES[i % BG_CLASSES.length];
+    const isFeatured = i === 0;
+    const spotsLow  = available > 0 && available <= 10;
+    const startFmt  = ev.start_date ? new Date(ev.start_date).toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric', year:'numeric' }) : null;
+
+    return `
+      <div class="event-card ${isFeatured ? 'featured' : ''} reveal ${i > 0 ? 'reveal-delay-' + Math.min(i,3) : ''}"
+           onclick="openEventPage('${ev.id}')" style="cursor:pointer;">
+        <div class="event-visual ${bgClass}">
+          ${isFeatured && available < 15 ? `<div class="event-badge-hot">🔥 Selling fast</div>` : ''}
+          <div class="event-emoji">${ev.banner_emoji || '🎪'}</div>
+        </div>
+        <div class="event-body">
+          <div class="event-org">${ev.venues?.name || 'Vancouver'}</div>
+          <div class="event-title">${ev.name}</div>
+          ${isFeatured ? `
+            <div class="event-details">
+              ${startFmt ? `<div class="event-detail">📅 ${startFmt}</div>` : ''}
+              ${ev.venues?.location ? `<div class="event-detail">📍 ${ev.venues.location}</div>` : ''}
+              ${ev.expected_attendance ? `<div class="event-detail">👥 ${ev.expected_attendance.toLocaleString()}+ expected</div>` : ''}
+              <div class="event-detail">🏪 ${booths.length} booths</div>
+            </div>` : ''}
+          <div class="event-footer">
+            <div>
+              <div class="event-from">From</div>
+              <div class="event-price">$${minPrice.toLocaleString()} CAD</div>
+            </div>
+            <div class="event-spots ${spotsLow ? 'low' : ''}">
+              ${available === 0 ? 'Sold out' : available + ' spots left'}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Re-run cursor hover + reveal on new cards
+  addHover(document.querySelectorAll('.event-card'));
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+  // Update hero featured card with first event
+  if (events[0]) updateHeroCard(events[0]);
+}
+
+// ── UPDATE HERO CARD ──
+function updateHeroCard(ev) {
+  const booths    = ev.booths || [];
+  const available = booths.filter(b => b.status === 'available').length;
+  const total     = booths.length;
+  const minPrice  = total ? Math.min(...booths.map(b => b.price)) : 399;
+  const pct       = total > 0 ? Math.round(((total - available) / total) * 100) : 55;
+
+  const orgEl    = document.querySelector('.fc-org');
+  const titleEl  = document.querySelector('.fc-title');
+  const progFill = document.querySelector('.progress-fill');
+  const progVal  = document.querySelector('.fc-progress-val');
+  const priceEl  = document.querySelector('.fc-price');
+
+  if (orgEl)    orgEl.textContent    = ev.venues?.name || 'Vancouver';
+  if (titleEl)  titleEl.innerHTML    = ev.name.replace(' ', '<br>');
+  if (progFill) progFill.style.width = pct + '%';
+  if (progVal)  progVal.textContent  = `${available} of ${total} remaining`;
+  if (priceEl)  priceEl.innerHTML    = `From <strong>$${minPrice.toLocaleString()}</strong> <span style="font-size:11px;color:var(--ink3)">CAD</span>`;
+}
+
+// ── OPEN EVENT PAGE (booth map) ──
+function openEventPage(eventId) {
+  window.location.href = `event.html?id=${eventId}`;
+}
+
+// ── INIT ──
+loadEvents();
+</script>
+</body>
+</html>

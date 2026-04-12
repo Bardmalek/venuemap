@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VenueMap — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ed;--bg2:#edeae4;--white:#fefcfa;--ink:#1a1916;--ink2:#4a4843;--ink3:#9a9690;
+  --border:#d8d4cc;--border2:#c8c4bc;
+  --amber:#d4620a;--amber-light:#f07030;--amber-bg:#fdf0e8;--amber-border:#f0c8a8;
+  --green:#1a6b3c;--green-bg:#e8f5ee;--red:#c0392b;--red-bg:#fde8e8;--yellow:#b45309;--yellow-bg:#fef3e8;
+  --serif:'Instrument Serif',serif;--sans:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;display:flex;flex-direction:column;}
+
+/* NAV */
+nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;flex-shrink:0;z-index:100;}
+.logo{font-size:16px;font-weight:800;letter-spacing:-0.5px;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:7px;}
+.logo-mark{width:22px;height:22px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;}
+.nav-divider{width:1px;height:20px;background:var(--border);}
+.nav-title{font-size:12px;font-weight:700;color:var(--ink2);}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-user{font-size:11px;color:var(--amber);font-weight:700;font-family:var(--mono);}
+.nav-btn{padding:6px 14px;border-radius:100px;font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--ink2);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.nav-btn:hover{border-color:var(--border2);color:var(--ink);background:var(--bg2);}
+.nav-btn-primary{background:var(--amber);border-color:var(--amber);color:white;font-weight:700;}
+.nav-btn-primary:hover{background:var(--amber-light);border-color:var(--amber-light);color:white;}
+
+/* LAYOUT */
+.main{flex:1;display:flex;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 12px;gap:4px;overflow-y:auto;}
+.sidebar-section{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);padding:8px 10px 4px;margin-top:8px;}
+.sidebar-section:first-child{margin-top:0;}
+.sidebar-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;text-decoration:none;color:var(--ink2);font-size:12px;font-weight:600;}
+.sidebar-item:hover{background:var(--bg2);color:var(--ink);}
+.sidebar-item.active{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber);}
+.sidebar-item svg{flex-shrink:0;opacity:0.7;}
+.sidebar-item.active svg{opacity:1;}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:24px;}
+.content::-webkit-scrollbar{width:4px;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* PAGES */
+.page{display:none;}
+.page.active{display:block;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+.stat-card-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);margin-bottom:8px;}
+.stat-card-num{font-family:var(--serif);font-size:36px;font-style:italic;color:var(--ink);}
+.stat-card-num.amber{color:var(--amber);}
+.stat-card-num.green{color:var(--green);}
+.stat-card-sub{font-size:11px;color:var(--ink3);margin-top:4px;}
+
+/* TABLE */
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.table-title{font-size:14px;font-weight:700;color:var(--ink);}
+.table-sub{font-size:11px;color:var(--ink3);margin-top:2px;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 16px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);border-bottom:1px solid var(--border);background:var(--bg2);}
+td{padding:11px 16px;font-size:12px;color:var(--ink2);border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+.td-name{font-weight:600;color:var(--ink);}
+.td-mono{font-family:var(--mono);font-size:11px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:0.3px;}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-amber{background:var(--amber-bg);color:var(--amber);}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow);}
+.badge-gray{background:var(--bg2);color:var(--ink3);}
+
+/* ACTION BUTTONS */
+.action-btn{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--ink2);cursor:pointer;transition:all 0.15s;font-family:var(--sans);}
+.action-btn:hover{border-color:var(--border2);color:var(--ink);background:var(--bg2);}
+.action-btn-red{color:var(--red)!important;}
+.action-btn-red:hover{border-color:var(--red)!important;background:var(--red-bg)!important;}
+.action-btn-green{color:var(--green)!important;}
+.action-btn-green:hover{border-color:var(--green)!important;background:var(--green-bg)!important;}
+.action-btns{display:flex;gap:5px;}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:20px;}
+.page-header-title{font-family:var(--serif);font-size:28px;font-style:italic;color:var(--ink);}
+.page-header-sub{font-size:12px;color:var(--ink3);margin-top:4px;}
+
+/* SEARCH BAR */
+.search-bar{display:flex;gap:10px;margin-bottom:16px;}
+.search-input{flex:1;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--amber);}
+.filter-select{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;cursor:pointer;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,25,22,0.5);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border:1px solid var(--border);border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.12);animation:modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-head{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:var(--serif);font-size:22px;font-style:italic;}
+.modal-x{background:none;border:1px solid var(--border);color:var(--ink2);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.modal-x:hover{background:var(--bg2);}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:12px 20px 18px;display:flex;gap:10px;border-top:1px solid var(--border);}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;}
+.form-input,.form-select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus{border-color:var(--amber);background:var(--white);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:600;color:white;z-index:3000;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:8px;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink3);}
+.empty-state-icon{font-size:40px;opacity:0.3;margin-bottom:12px;}
+.empty-state-text{font-size:13px;line-height:1.6;}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;gap:10px;color:var(--ink3);font-size:12px;}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="vancouver_platform.html" class="logo"><div class="logo-mark">V</div>VenueMap</a>
+  <div class="nav-divider"></div>
+  <span class="nav-title">Dashboard</span>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser">—</span>
+    <a href="venue_map_editor.html" class="nav-btn">+ New Event</a>
+    <button class="nav-btn" onclick="signOut()">Sign out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Overview</div>
+    <div class="sidebar-item active" onclick="showPage('overview',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </div>
+
+    <div class="sidebar-section">Manage</div>
+    <div class="sidebar-item" onclick="showPage('events',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Events
+    </div>
+    <div class="sidebar-item" onclick="showPage('booths',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Booths
+    </div>
+    <div class="sidebar-item" onclick="showPage('bookings',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Bookings
+    </div>
+    <div class="sidebar-item" onclick="showPage('vendors',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Vendors
+    </div>
+    <div class="sidebar-item" onclick="showPage('venues',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Venues
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- OVERVIEW PAGE -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div class="page-header-title">Good to see you 👋</div>
+        <div class="page-header-sub" id="overviewSub">Loading your dashboard...</div>
+      </div>
+
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card"><div class="stat-card-label">Total Events</div><div class="stat-card-num amber" id="statEvents">—</div><div class="stat-card-sub">Published & drafts</div></div>
+        <div class="stat-card"><div class="stat-card-label">Total Booths</div><div class="stat-card-num" id="statBooths">—</div><div class="stat-card-sub">Across all events</div></div>
+        <div class="stat-card"><div class="stat-card-label">Bookings</div><div class="stat-card-num green" id="statBookings">—</div><div class="stat-card-sub">All time</div></div>
+        <div class="stat-card"><div class="stat-card-label">Max Revenue</div><div class="stat-card-num amber" id="statRevenue">—</div><div class="stat-card-sub">If all booths fill</div></div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div><div class="table-title">Recent Events</div><div class="table-sub">Your latest published events</div></div>
+          <button class="nav-btn" onclick="showPage('events', document.querySelector('[onclick*=\"events\"]'))">View all</button>
+        </div>
+        <table>
+          <thead><tr><th>Event</th><th>Venue</th><th>Booths</th><th>Bookings</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="overviewEventsTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div><div class="table-title">Recent Bookings</div><div class="table-sub">Latest vendor bookings</div></div>
+        </div>
+        <table>
+          <thead><tr><th>Vendor</th><th>Event</th><th>Booth</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="overviewBookingsTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EVENTS PAGE -->
+    <div class="page" id="page-events">
+      <div class="page-header">
+        <div class="page-header-title">Events</div>
+        <div class="page-header-sub">Manage all your events</div>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" placeholder="Search events..." oninput="filterEvents(this.value)">
+        <select class="filter-select" onchange="filterEventsByStatus(this.value)">
+          <option value="">All statuses</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <a href="venue_map_editor.html" class="nav-btn nav-btn-primary">+ New Event</a>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Event Name</th><th>Venue</th><th>Date</th><th>Booths</th><th>Revenue Potential</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="eventsTable"><tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOOTHS PAGE -->
+    <div class="page" id="page-booths">
+      <div class="page-header">
+        <div class="page-header-title">Booths</div>
+        <div class="page-header-sub">View and manage all booth statuses</div>
+      </div>
+      <div class="search-bar">
+        <select class="filter-select" id="boothEventFilter" onchange="loadBooths()">
+          <option value="">All events</option>
+        </select>
+        <select class="filter-select" onchange="filterBoothsByStatus(this.value)">
+          <option value="">All statuses</option>
+          <option value="available">Available</option>
+          <option value="reserved">Reserved</option>
+          <option value="booked">Booked</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Ref</th><th>Name</th><th>Event</th><th>Category</th><th>Price</th><th>Size</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="boothsTable"><tr><td colspan="8"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOOKINGS PAGE -->
+    <div class="page" id="page-bookings">
+      <div class="page-header">
+        <div class="page-header-title">Bookings</div>
+        <div class="page-header-sub">All vendor bookings across every event</div>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" placeholder="Search by vendor, event, booth..." oninput="filterBookings(this.value)">
+        <select class="filter-select" onchange="filterBookingsByStatus(this.value)">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="paid">Paid</option>
+          <option value="checked_in">Checked in</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Vendor</th><th>Business</th><th>Event</th><th>Booth</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="bookingsTable"><tr><td colspan="8"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VENDORS PAGE -->
+    <div class="page" id="page-vendors">
+      <div class="page-header">
+        <div class="page-header-title">Vendors</div>
+        <div class="page-header-sub">Everyone who has signed up or booked</div>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Email</th><th>Name</th><th>Company</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="vendorsTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VENUES PAGE -->
+    <div class="page" id="page-venues">
+      <div class="page-header">
+        <div class="page-header-title">Venues</div>
+        <div class="page-header-sub">All mapped Vancouver venues</div>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Icon</th><th>Name</th><th>Location</th><th>Size</th><th>Coordinates</th><th>Events</th></tr></thead>
+          <tbody id="venuesTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- EDIT EVENT MODAL -->
+<div class="modal-overlay" id="editEventModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Edit Event</div>
+      <button class="modal-x" onclick="closeModal('editEventModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editEventId">
+      <div class="form-group">
+        <label class="form-label">Event Name</label>
+        <input class="form-input" id="editEventName">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="editEventDesc">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input class="form-input" id="editEventStart" type="datetime-local">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date</label>
+          <input class="form-input" id="editEventEnd" type="datetime-local">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="editEventStatus">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expected Attendance</label>
+          <input class="form-input" id="editEventAttendance" type="number">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="nav-btn" style="flex:1" onclick="closeModal('editEventModal')">Cancel</button>
+      <button class="nav-btn nav-btn-primary" style="flex:2" onclick="saveEvent()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL  = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser = null;
+let allEvents = [], allBookings = [], allBooths = [], allVendors = [], allVenues = [];
+let filteredEvents = [], filteredBookings = [], filteredBooths = [];
+
+// ── AUTH ──
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'venue_map_editor.html'; return; }
+  currentUser = session.user;
+  document.getElementById('navUser').textContent = currentUser.email.split('@')[0];
+  document.getElementById('overviewSub').textContent = `Welcome back, ${currentUser.email.split('@')[0]}. Here's what's happening.`;
+  loadAll();
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.href = 'venue_map_editor.html';
+}
+
+// ── LOAD ALL DATA ──
+async function loadAll() {
+  await Promise.all([loadEvents(), loadBookings(), loadBooths(), loadVendors(), loadVenues()]);
+  renderOverview();
+}
+
+async function loadEvents() {
+  const { data } = await sb.from('events').select('*, venues(name,location), booths(id,price,status)').order('created_at', { ascending: false });
+  allEvents = data || [];
+  filteredEvents = [...allEvents];
+  renderEvents();
+  populateEventFilter();
+}
+
+async function loadBookings() {
+  const { data } = await sb.from('bookings').select('*, booths(booth_ref,name), events(name)').order('created_at', { ascending: false });
+  allBookings = data || [];
+  filteredBookings = [...allBookings];
+  renderBookings();
+}
+
+async function loadBooths() {
+  const eventId = document.getElementById('boothEventFilter')?.value;
+  let query = sb.from('booths').select('*, events(name)').order('event_id').order('booth_ref');
+  if (eventId) query = query.eq('event_id', eventId);
+  const { data } = await query;
+  allBooths = data || [];
+  filteredBooths = [...allBooths];
+  renderBooths();
+}
+
+async function loadVendors() {
+  const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+  allVendors = data || [];
+  renderVendors();
+}
+
+async function loadVenues() {
+  const { data } = await sb.from('venues').select('*').order('name');
+  allVenues = data || [];
+  renderVenues();
+}
+
+// ── POPULATE DROPDOWNS ──
+function populateEventFilter() {
+  const sel = document.getElementById('boothEventFilter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All events</option>' + allEvents.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+}
+
+// ── RENDER OVERVIEW ──
+function renderOverview() {
+  const totalBooths   = allEvents.reduce((s, e) => s + (e.booths?.length || 0), 0);
+  const totalRevenue  = allEvents.reduce((s, e) => s + (e.booths?.reduce((bs, b) => bs + Number(b.price), 0) || 0), 0);
+
+  document.getElementById('statEvents').textContent   = allEvents.length;
+  document.getElementById('statBooths').textContent   = totalBooths;
+  document.getElementById('statBookings').textContent = allBookings.length;
+  document.getElementById('statRevenue').textContent  = totalRevenue >= 1000 ? `$${(totalRevenue/1000).toFixed(1)}k` : `$${totalRevenue}`;
+
+  // Recent events
+  const tbody = document.getElementById('overviewEventsTable');
+  if (allEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-text">No events yet. <a href="venue_map_editor.html" style="color:var(--amber)">Create one →</a></div></div></td></tr>`; return; }
+  tbody.innerHTML = allEvents.slice(0,5).map(e => {
+    const booths    = e.booths || [];
+    const available = booths.filter(b => b.status === 'available').length;
+    const safeName  = encodeURIComponent(e.name);
+    return `<tr>
+      <td class="td-name">${e.banner_emoji || '🎪'} ${e.name}</td>
+      <td>${e.venues?.name || '—'}</td>
+      <td class="td-mono">${booths.length} total · ${available} open</td>
+      <td class="td-mono">${allBookings.filter(b => b.event_id === e.id).length}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td><div class="action-btns">
+        <button class="action-btn" onclick="editEvent('${e.id}')">Edit</button>
+        <button class="action-btn action-btn-red" onclick="deleteEvent('${e.id}', decodeURIComponent('${safeName}'))">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  // Recent bookings
+  const btbody = document.getElementById('overviewBookingsTable');
+  if (allBookings.length === 0) { btbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">No bookings yet</td></tr>`; return; }
+  btbody.innerHTML = allBookings.slice(0,5).map(b => `<tr>
+    <td class="td-name">${b.contact_email || '—'}</td>
+    <td>${b.events?.name || '—'}</td>
+    <td class="td-mono">${b.booths?.booth_ref || '—'}</td>
+    <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
+    <td>${statusBadge(b.status)}</td>
+    <td class="td-mono">${fmtDate(b.created_at)}</td>
+  </tr>`).join('');
+}
+
+// ── RENDER EVENTS ──
+function renderEvents() {
+  const tbody = document.getElementById('eventsTable');
+  if (filteredEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-text">No events found.</div></div></td></tr>`; return; }
+  tbody.innerHTML = filteredEvents.map(e => {
+    const booths   = e.booths || [];
+    const revenue  = booths.reduce((s, b) => s + Number(b.price), 0);
+    const startFmt = e.start_date ? fmtDate(e.start_date) : '—';
+    const safeName = encodeURIComponent(e.name);
+    return `<tr>
+      <td class="td-name">${e.banner_emoji || '🎪'} ${e.name}</td>
+      <td>${e.venues?.name || '—'}</td>
+      <td class="td-mono">${startFmt}</td>
+      <td class="td-mono">${booths.length}</td>
+      <td class="td-mono">$${revenue.toLocaleString()}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td><div class="action-btns">
+        <button class="action-btn" onclick="editEvent('${e.id}')">Edit</button>
+        <button class="action-btn ${e.status === 'published' ? 'action-btn-red' : 'action-btn-green'}" onclick="toggleEventStatus('${e.id}','${e.status}')">${e.status === 'published' ? 'Unpublish' : 'Publish'}</button>
+        <button class="action-btn action-btn-red" onclick="deleteEvent('${e.id}', decodeURIComponent('${safeName}'))">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── RENDER BOOTHS ──
+function renderBooths() {
+  const tbody = document.getElementById('boothsTable');
+  if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🏪</div><div class="empty-state-text">No booths found.</div></div></td></tr>`; return; }
+  tbody.innerHTML = filteredBooths.map(b => `<tr>
+    <td class="td-mono">${b.booth_ref}</td>
+    <td class="td-name">${b.name}</td>
+    <td>${b.events?.name || '—'}</td>
+    <td>${b.category}</td>
+    <td class="td-mono">$${Number(b.price).toLocaleString()}</td>
+    <td class="td-mono">${b.width_m && b.length_m ? `${b.width_m}×${b.length_m}m` : '—'}</td>
+    <td>${statusBadge(b.status)}</td>
+    <td><div class="action-btns">
+      ${b.status !== 'available'   ? `<button class="action-btn action-btn-green" onclick="setBoothStatus('${b.id}','available')">Set Available</button>` : ''}
+      ${b.status !== 'booked'      ? `<button class="action-btn" onclick="setBoothStatus('${b.id}','booked')">Set Booked</button>` : ''}
+      ${b.status !== 'maintenance' ? `<button class="action-btn action-btn-red" onclick="setBoothStatus('${b.id}','maintenance')">Maintenance</button>` : ''}
+    </div></td>
+  </tr>`).join('');
+}
+
+// ── RENDER BOOKINGS ──
+function renderBookings() {
+  const tbody = document.getElementById('bookingsTable');
+  if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No bookings yet.</div></div></td></tr>`; return; }
+  tbody.innerHTML = filteredBookings.map(b => `<tr>
+    <td class="td-name">${b.contact_email || '—'}</td>
+    <td>${b.business_name || '—'}</td>
+    <td>${b.events?.name || '—'}</td>
+    <td class="td-mono">${b.booths?.booth_ref || '—'} · ${b.booths?.name || ''}</td>
+    <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
+    <td>${statusBadge(b.status)}</td>
+    <td class="td-mono">${fmtDate(b.created_at)}</td>
+    <td><div class="action-btns">
+      ${b.status === 'confirmed' ? `<button class="action-btn action-btn-green" onclick="setBookingStatus('${b.id}','paid')">Mark Paid</button>` : ''}
+      ${b.status === 'paid' ? `<button class="action-btn action-btn-green" onclick="setBookingStatus('${b.id}','checked_in')">Check In</button>` : ''}
+      ${!['cancelled','refunded'].includes(b.status) ? `<button class="action-btn action-btn-red" onclick="setBookingStatus('${b.id}','cancelled')">Cancel</button>` : ''}
+    </div></td>
+  </tr>`).join('');
+}
+
+// ── RENDER VENDORS ──
+function renderVendors() {
+  const tbody = document.getElementById('vendorsTable');
+  if (allVendors.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">No users yet.</div></div></td></tr>`; return; }
+  tbody.innerHTML = allVendors.map(v => `<tr>
+    <td class="td-name">${v.email}</td>
+    <td>${v.full_name || '—'}</td>
+    <td>${v.company || '—'}</td>
+    <td>${roleBadge(v.role)}</td>
+    <td class="td-mono">${fmtDate(v.created_at)}</td>
+    <td><div class="action-btns">
+      ${v.role !== 'organizer' ? `<button class="action-btn action-btn-green" onclick="setUserRole('${v.id}','organizer')">Make Organizer</button>` : ''}
+      ${v.role !== 'vendor' ? `<button class="action-btn" onclick="setUserRole('${v.id}','vendor')">Make Vendor</button>` : ''}
+    </div></td>
+  </tr>`).join('');
+}
+
+// ── RENDER VENUES ──
+function renderVenues() {
+  const tbody = document.getElementById('venuesTable');
+  if (allVenues.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No venues.</div></td></tr>`; return; }
+  tbody.innerHTML = allVenues.map(v => {
+    const eventCount = allEvents.filter(e => e.venue_id === v.id).length;
+    return `<tr>
+      <td style="font-size:20px;">${v.icon}</td>
+      <td class="td-name">${v.name}</td>
+      <td>${v.location}</td>
+      <td class="td-mono">${v.size_sqft || '—'}</td>
+      <td class="td-mono">${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}</td>
+      <td class="td-mono">${eventCount} events</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ACTIONS ──
+async function setBoothStatus(id, status) {
+  const { error } = await sb.from('booths').update({ status }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `Booth set to ${status}`);
+  await loadBooths();
+  renderOverview();
+}
+
+async function setBookingStatus(id, status) {
+  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `Booking ${status}`);
+  await loadBookings();
+}
+
+async function setUserRole(id, role) {
+  const { error } = await sb.from('profiles').update({ role }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `User role updated to ${role}`);
+  await loadVendors();
+}
+
+async function toggleEventStatus(id, currentStatus) {
+  const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+  const { error } = await sb.from('events').update({ status: newStatus }).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', `Event ${newStatus}`);
+  await loadEvents();
+  renderOverview();
+}
+
+async function deleteEvent(id, name) {
+  if (!confirm(`Delete "${name}" and all its booths? This cannot be undone.`)) return;
+  const { error } = await sb.from('events').delete().eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('🗑', `"${name}" deleted`);
+  await loadEvents();
+  renderOverview();
+}
+
+function editEvent(id) {
+  const ev = allEvents.find(e => e.id === id);
+  if (!ev) return;
+  document.getElementById('editEventId').value = id;
+  document.getElementById('editEventName').value = ev.name;
+  document.getElementById('editEventDesc').value = ev.description || '';
+  document.getElementById('editEventStart').value = ev.start_date ? ev.start_date.slice(0,16) : '';
+  document.getElementById('editEventEnd').value = ev.end_date ? ev.end_date.slice(0,16) : '';
+  document.getElementById('editEventStatus').value = ev.status;
+  document.getElementById('editEventAttendance').value = ev.expected_attendance || '';
+  openModal('editEventModal');
+}
+
+async function saveEvent() {
+  const id = document.getElementById('editEventId').value;
+  const updates = {
+    name:                document.getElementById('editEventName').value.trim(),
+    description:         document.getElementById('editEventDesc').value.trim(),
+    start_date:          document.getElementById('editEventStart').value || null,
+    end_date:            document.getElementById('editEventEnd').value || null,
+    status:              document.getElementById('editEventStatus').value,
+    expected_attendance: document.getElementById('editEventAttendance').value ? parseInt(document.getElementById('editEventAttendance').value) : null,
+  };
+  const { error } = await sb.from('events').update(updates).eq('id', id);
+  if (error) { showToast('✕', error.message); return; }
+  showToast('✓', 'Event updated');
+  closeModal('editEventModal');
+  await loadEvents();
+  renderOverview();
+}
+
+// ── FILTERS ──
+function filterEvents(q) {
+  filteredEvents = allEvents.filter(e => e.name.toLowerCase().includes(q.toLowerCase()) || e.venues?.name?.toLowerCase().includes(q.toLowerCase()));
+  renderEvents();
+}
+
+function filterEventsByStatus(status) {
+  filteredEvents = status ? allEvents.filter(e => e.status === status) : [...allEvents];
+  renderEvents();
+}
+
+function filterBooths() { loadBooths(); }
+
+function filterBoothsByStatus(status) {
+  filteredBooths = status ? allBooths.filter(b => b.status === status) : [...allBooths];
+  renderBooths();
+}
+
+function filterBookings(q) {
+  const ql = q.toLowerCase();
+  filteredBookings = allBookings.filter(b =>
+    b.contact_email?.toLowerCase().includes(ql) ||
+    b.business_name?.toLowerCase().includes(ql) ||
+    b.events?.name?.toLowerCase().includes(ql) ||
+    b.booths?.booth_ref?.toLowerCase().includes(ql)
+  );
+  renderBookings();
+}
+
+function filterBookingsByStatus(status) {
+  filteredBookings = status ? allBookings.filter(b => b.status === status) : [...allBookings];
+  renderBookings();
+}
+
+// ── HELPERS ──
+function statusBadge(status) {
+  const map = {
+    published: 'badge-green', draft: 'badge-gray', cancelled: 'badge-red', completed: 'badge-amber',
+    available: 'badge-green', reserved: 'badge-yellow', booked: 'badge-red', maintenance: 'badge-gray',
+    pending: 'badge-yellow', confirmed: 'badge-amber', paid: 'badge-green', checked_in: 'badge-green', refunded: 'badge-gray'
+  };
+  return `<span class="badge ${map[status] || 'badge-gray'}">${status}</span>`;
+}
+
+function roleBadge(role) {
+  const map = { vendor: 'badge-gray', organizer: 'badge-amber', city_admin: 'badge-green', super_admin: 'badge-red' };
+  return `<span class="badge ${map[role] || 'badge-gray'}">${role}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ── NAVIGATION ──
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── MODAL ──
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── TOAST ──
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${icon}</span> ${msg}`;
+  t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ──
+initAuth();
+</script>
+</body>
+</html>

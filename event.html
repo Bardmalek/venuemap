@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VenueMap — Book a Booth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --bg:#f5f2ed; --bg2:#edeae4; --ink:#1a1916; --ink2:#4a4843; --ink3:#9a9690;
+  --border:#d8d4cc; --border2:#c8c4bc; --white:#fefcfa; --card:#fefcfa;
+  --amber:#d4620a; --amber-light:#f07030; --amber-bg:#fdf0e8; --amber-border:#f0c8a8;
+  --green:#1a6b3c; --green-bg:#e8f5ee; --red:#c0392b; --yellow:#b45309;
+  --serif:'Instrument Serif',serif; --sans:'Syne',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;display:flex;flex-direction:column;}
+
+/* NAV */
+nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;}
+.logo{font-size:16px;font-weight:800;letter-spacing:-0.5px;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:7px;}
+.logo-mark{width:22px;height:22px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;}
+.nav-back{font-size:12px;color:var(--ink3);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color 0.15s;}
+.nav-back:hover{color:var(--ink);}
+.nav-divider{width:1px;height:20px;background:var(--border);}
+.nav-event-name{font-size:12px;font-weight:600;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-pill-tag{background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:0.5px;}
+.nav-pill-tag.low{background:#fef3e8;color:var(--amber);}
+
+/* LAYOUT */
+.main{flex:1;display:flex;overflow:hidden;}
+
+/* LEFT — booth list */
+.side-panel{width:300px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.sp-header{padding:16px;border-bottom:1px solid var(--border);}
+.sp-title{font-family:var(--serif);font-size:20px;font-style:italic;color:var(--ink);}
+.sp-sub{font-size:11px;color:var(--ink3);margin-top:3px;font-family:var(--mono);}
+
+.filter-row{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap;}
+.filter-chip{padding:4px 10px;border-radius:100px;border:1px solid var(--border);font-size:10px;font-weight:700;color:var(--ink3);cursor:pointer;transition:all 0.15s;background:transparent;}
+.filter-chip:hover{border-color:var(--border2);color:var(--ink2);}
+.filter-chip.active{background:var(--amber);border-color:var(--amber);color:white;}
+
+.booth-list{flex:1;overflow-y:auto;padding:10px;}
+.booth-list::-webkit-scrollbar{width:3px;}
+.booth-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.booth-item{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all 0.15s;}
+.booth-item:hover{border-color:var(--border2);background:var(--bg2);}
+.booth-item.selected{border-color:var(--amber);background:var(--amber-bg);}
+.booth-item.unavailable{opacity:0.45;cursor:not-allowed;}
+.bi-top{display:flex;justify-content:space-between;align-items:center;}
+.bi-ref{font-family:var(--mono);font-size:10px;color:var(--ink3);}
+.bi-status{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;}
+.status-available{background:var(--green-bg);color:var(--green);}
+.status-reserved{background:#fef3e8;color:var(--amber);}
+.status-booked{background:#fde8e8;color:var(--red);}
+.bi-name{font-size:13px;font-weight:600;margin-top:4px;}
+.bi-type{font-size:10px;color:var(--ink3);margin-top:1px;}
+.bi-price{font-family:var(--serif);font-size:20px;color:var(--amber);margin-top:6px;font-style:italic;}
+.bi-size{font-size:10px;color:var(--ink3);font-family:var(--mono);}
+
+/* FOOTER */
+.sp-footer{padding:14px;border-top:1px solid var(--border);}
+.selected-info{display:none;margin-bottom:12px;}
+.selected-info.show{display:block;}
+.si-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);}
+.si-name{font-size:14px;font-weight:600;margin-top:3px;}
+.si-price{font-family:var(--serif);font-size:26px;color:var(--amber);font-style:italic;}
+.btn-book{width:100%;background:var(--amber);color:white;border:none;padding:12px;border-radius:100px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-book:hover{background:var(--amber-light);transform:translateY(-1px);box-shadow:0 4px 16px rgba(212,98,10,0.25);}
+.btn-book:disabled{background:var(--border);color:var(--ink3);cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* MAP */
+.map-area{flex:1;position:relative;overflow:hidden;}
+#map{width:100%;height:100%;}
+#boothOverlay{position:absolute;inset:0;pointer-events:none;z-index:500;}
+.map-overlay-tl{position:absolute;top:12px;left:12px;z-index:800;display:flex;flex-direction:column;gap:8px;}
+.map-pill{background:rgba(254,252,250,0.93);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:100px;padding:5px 12px;font-family:var(--mono);font-size:10px;color:var(--ink2);display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.map-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* LEAFLET */
+.leaflet-container{background:var(--bg2);font-family:var(--sans);}
+.leaflet-control-zoom{border:1px solid var(--border)!important;background:var(--white)!important;box-shadow:0 2px 8px rgba(0,0,0,0.07)!important;}
+.leaflet-control-zoom a{background:var(--white)!important;color:var(--ink2)!important;border-color:var(--border)!important;}
+.leaflet-control-zoom a:hover{background:var(--bg2)!important;color:var(--ink)!important;}
+.leaflet-control-attribution{background:rgba(245,242,237,0.88)!important;color:var(--ink3)!important;font-size:9px!important;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,25,22,0.5);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border:1px solid var(--border);border-radius:16px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.12);animation:modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:var(--serif);font-size:24px;font-style:italic;}
+.modal-x{background:none;border:1px solid var(--border);color:var(--ink2);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.modal-x:hover{border-color:var(--border2);color:var(--ink);background:var(--bg2);}
+.modal-body{padding:20px 22px;}
+.modal-foot{padding:14px 22px 20px;display:flex;gap:10px;border-top:1px solid var(--border);}
+.booking-summary{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
+.bs-name{font-size:14px;font-weight:600;}
+.bs-detail{font-size:11px;color:var(--ink3);margin-top:2px;}
+.bs-price{font-family:var(--serif);font-size:32px;color:var(--amber);font-style:italic;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;}
+.form-input,.form-select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus{border-color:var(--amber);background:var(--white);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.btn-primary{flex:2;background:var(--amber);color:white;border:none;padding:12px;border-radius:100px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.btn-primary:hover{background:var(--amber-light);}
+.btn-ghost{flex:1;background:transparent;border:1px solid var(--border);color:var(--ink2);padding:12px;border-radius:100px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-ghost:hover{border-color:var(--border2);color:var(--ink);}
+.steps{display:flex;gap:5px;margin-bottom:20px;}
+.step-dot{height:3px;border-radius:2px;background:var(--border);flex:1;transition:background 0.3s;}
+.step-dot.active{background:var(--amber);}
+.step-dot.done{background:var(--amber-border);}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:600;color:white;z-index:3000;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:8px;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* LOADING */
+.loading-state{display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:var(--ink3);}
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="vancouver_platform.html" class="logo"><div class="logo-mark">V</div>VenueMap</a>
+  <div class="nav-divider"></div>
+  <a href="vancouver_platform.html" class="nav-back">← All Events</a>
+  <div class="nav-divider"></div>
+  <div class="nav-event-name" id="navEventName">Loading...</div>
+  <div class="nav-right">
+    <div class="nav-pill-tag" id="navSpots">—</div>
+    <a href="venue_map_editor.html" style="font-size:11px;color:var(--ink3);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:100px;font-weight:600;transition:all 0.15s;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--ink3)'">Organizer →</a>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+    <div class="sp-header">
+      <div class="sp-title" id="spTitle">Loading event...</div>
+      <div class="sp-sub" id="spSub">—</div>
+      <div class="filter-row">
+        <div class="filter-chip active" onclick="filterBooths('all',this)">All</div>
+        <div class="filter-chip" onclick="filterBooths('available',this)">Available</div>
+        <div class="filter-chip" onclick="filterBooths('food',this)">Food</div>
+        <div class="filter-chip" onclick="filterBooths('vip',this)">VIP</div>
+      </div>
+    </div>
+    <div class="booth-list" id="boothList">
+      <div class="loading-state"><div class="spinner"></div>Loading booths...</div>
+    </div>
+    <div class="sp-footer">
+      <div class="selected-info" id="selectedInfo">
+        <div class="si-label">Selected</div>
+        <div class="si-name" id="siName">—</div>
+        <div class="si-price" id="siPrice">—</div>
+      </div>
+      <button class="btn-book" id="bookBtn" disabled onclick="openBookingModal()">
+        Select a booth to continue
+      </button>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-area">
+    <div id="map"></div>
+    <canvas id="boothOverlay"></canvas>
+    <div class="map-overlay-tl">
+      <div class="map-pill">
+        <span class="map-dot" style="background:var(--amber)"></span>
+        <span id="coordText">Move over map</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Reserve Booth</div>
+      <button class="modal-x" onclick="closeBookingModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="steps">
+        <div class="step-dot active" id="sd1"></div>
+        <div class="step-dot" id="sd2"></div>
+        <div class="step-dot" id="sd3"></div>
+      </div>
+
+      <!-- STEP 1: Info -->
+      <div id="modalStep1">
+        <div class="booking-summary">
+          <div>
+            <div class="bs-name" id="bsName">—</div>
+            <div class="bs-detail" id="bsDetail">—</div>
+          </div>
+          <div class="bs-price" id="bsPrice">—</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" id="fFirstName" placeholder="Darius">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" id="fLastName" placeholder="Tehrani">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Business Name</label>
+          <input class="form-input" id="fBizName" placeholder="Your Business">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="fEmail" type="email" placeholder="you@business.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" id="fPhone" type="tel" placeholder="+1 604 000 0000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Business Type</label>
+          <select class="form-select" id="fBizType">
+            <option value="">Select type...</option>
+            <option>Food & Beverage</option>
+            <option>Retail</option>
+            <option>Arts & Crafts</option>
+            <option>Services</option>
+            <option>Nonprofit</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- STEP 2: Summary -->
+      <div id="modalStep2" style="display:none;">
+        <div style="text-align:center;padding:10px 0 20px;">
+          <div style="font-size:48px;margin-bottom:12px;">✅</div>
+          <div style="font-family:var(--serif);font-size:24px;font-style:italic;margin-bottom:8px;">Almost there</div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7;">Your booth is being held for <strong style="color:var(--amber)">10 minutes</strong>. Complete payment to confirm.</div>
+        </div>
+        <div style="background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:10px;padding:16px;">
+          <div style="font-size:10px;font-family:var(--mono);color:var(--ink3);letter-spacing:1px;margin-bottom:10px;">ORDER SUMMARY</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+            <span id="orderBoothName">Booth</span>
+            <span id="orderBoothPrice" style="color:var(--amber);font-weight:600;">$0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin-bottom:6px;">
+            <span>Platform fee (7%)</span>
+            <span id="orderFee">$0</span>
+          </div>
+          <div style="border-top:1px solid var(--amber-border);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;font-weight:700;">
+            <span>Total</span>
+            <span id="orderTotal" style="color:var(--amber);font-family:var(--serif);font-size:22px;font-style:italic;">$0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Confirmed -->
+      <div id="modalStep3" style="display:none;">
+        <div style="text-align:center;padding:10px 0;">
+          <div style="font-size:56px;margin-bottom:14px;">🎉</div>
+          <div style="font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:10px;">Booth Confirmed!</div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:20px;">Check your email for your confirmation and QR code for event day check-in.</div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:13px;color:var(--amber);" id="bookingRef">REF: VM-0000</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" id="modalFoot">
+      <button class="btn-ghost" onclick="closeBookingModal()">Cancel</button>
+      <button class="btn-primary" id="modalNextBtn" onclick="nextStep()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL  = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// Get event ID from URL
+const params  = new URLSearchParams(window.location.search);
+const eventId = params.get('id');
+
+let currentEvent    = null;
+let allBooths       = [];
+let selectedBooth   = null;
+let currentFilter   = 'all';
+let modalStep       = 1;
+
+// ── MAP ──
+const map = L.map('map', { center:[49.2308,  -123.0214], zoom: 17, zoomControl: true });
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Esri', maxZoom: 20
+}).addTo(map);
+
+const overlay = document.getElementById('boothOverlay');
+const ctx     = overlay.getContext('2d');
+
+function resizeOverlay() {
+  const area = document.querySelector('.map-area');
+  overlay.width = area.clientWidth; overlay.height = area.clientHeight;
+  redraw();
+}
+window.addEventListener('resize', resizeOverlay);
+map.on('move zoom', redraw);
+
+function latlngToPixel(lat, lng) {
+  const pt = map.latLngToContainerPoint(L.latLng(lat, lng));
+  return { x: pt.x, y: pt.y };
+}
+
+function hexToRgba(hex, a) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function roundRect(c, x, y, w, h, r) {
+  if(w<0){x+=w;w=-w;} if(h<0){y+=h;h=-h;} r=Math.min(r,w/2,h/2);
+  c.beginPath();
+  c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.arcTo(x+w,y,x+w,y+r,r);
+  c.lineTo(x+w,y+h-r); c.arcTo(x+w,y+h,x+w-r,y+h,r);
+  c.lineTo(x+r,y+h); c.arcTo(x,y+h,x,y+h-r,r);
+  c.lineTo(x,y+r); c.arcTo(x,y,x+r,y,r);
+  c.closePath();
+}
+
+const STATUS_COLORS = {
+  available: { fill: 'rgba(26,107,60,0.2)',  stroke: '#1a6b3c' },
+  reserved:  { fill: 'rgba(180,83,9,0.2)',   stroke: '#b45309' },
+  booked:    { fill: 'rgba(192,57,43,0.2)',  stroke: '#c0392b' },
+  maintenance:{ fill:'rgba(100,100,100,0.2)',stroke: '#666'    },
+};
+
+function redraw() {
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  const visibleBooths = currentFilter === 'all' ? allBooths
+    : currentFilter === 'available' ? allBooths.filter(b => b.status === 'available')
+    : allBooths.filter(b => b.category === currentFilter);
+
+  visibleBooths.forEach(b => {
+    const p1 = latlngToPixel(b.lat1, b.lng1);
+    const p2 = latlngToPixel(b.lat2, b.lng2);
+    const x  = Math.min(p1.x,p2.x), y = Math.min(p1.y,p2.y);
+    const w  = Math.abs(p2.x-p1.x), h = Math.abs(p2.y-p1.y);
+    const cx = x+w/2, cy = y+h/2;
+    const rot = ((b.rotation||0)*Math.PI)/180;
+    const isSelected = selectedBooth?.id === b.id;
+    const col = STATUS_COLORS[b.status] || STATUS_COLORS.available;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+
+    ctx.fillStyle = isSelected ? hexToRgba(b.color||'#d4620a', 0.35) : col.fill;
+    roundRect(ctx, -w/2, -h/2, w, h, 4); ctx.fill();
+
+    ctx.strokeStyle = isSelected ? (b.color||'#d4620a') : col.stroke;
+    ctx.lineWidth = isSelected ? 2.5 : 1.5;
+    if (isSelected) { ctx.shadowBlur=12; ctx.shadowColor=b.color||'#d4620a'; }
+    roundRect(ctx, -w/2, -h/2, w, h, 4); ctx.stroke();
+    ctx.shadowBlur=0;
+
+    if (w > 28 && h > 18) {
+      ctx.fillStyle = 'rgba(26,25,22,0.85)';
+      ctx.font = `bold ${Math.min(11,Math.max(7,w/7))}px 'JetBrains Mono',monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(b.booth_ref, 0, -5);
+      ctx.font = `${Math.min(9,Math.max(6,w/9))}px 'Syne',sans-serif`;
+      ctx.fillStyle = 'rgba(26,25,22,0.6)';
+      ctx.fillText(`$${b.price}`, 0, 6);
+    }
+    ctx.restore();
+  });
+}
+
+// ── CLICK ON MAP ──
+overlay.style.pointerEvents = 'auto';
+overlay.addEventListener('wheel', e => map._container.dispatchEvent(new WheelEvent('wheel',e)), {passive:true});
+overlay.addEventListener('mousedown', e => {
+  const rect = overlay.getBoundingClientRect();
+  const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+  let hit = null;
+  for (let i=allBooths.length-1; i>=0; i--) {
+    const b=allBooths[i];
+    const p1=latlngToPixel(b.lat1,b.lng1), p2=latlngToPixel(b.lat2,b.lng2);
+    const x=Math.min(p1.x,p2.x), y=Math.min(p1.y,p2.y);
+    const w=Math.abs(p2.x-p1.x), h=Math.abs(p2.y-p1.y);
+    const rot = -((b.rotation||0)*Math.PI)/180;
+    const dx=mx-(x+w/2), dy=my-(y+h/2);
+    const lx=dx*Math.cos(rot)-dy*Math.sin(rot);
+    const ly=dx*Math.sin(rot)+dy*Math.cos(rot);
+    if (lx>=-w/2&&lx<=w/2&&ly>=-h/2&&ly<=h/2) { hit=b; break; }
+  }
+  if (hit) {
+    if (hit.status !== 'available') { showToast('⛔', `Booth ${hit.booth_ref} is ${hit.status}`); return; }
+    selectBooth(hit);
+  } else {
+    deselectBooth();
+    map._container.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,clientX:e.clientX,clientY:e.clientY,button:e.button,buttons:e.buttons}));
+  }
+});
+
+overlay.addEventListener('mousemove', e => {
+  const rect=overlay.getBoundingClientRect();
+  document.getElementById('coordText').textContent = map.containerPointToLatLng(L.point(e.clientX-rect.left,e.clientY-rect.top)).lat.toFixed(5) + ', ' + map.containerPointToLatLng(L.point(e.clientX-rect.left,e.clientY-rect.top)).lng.toFixed(5);
+});
+
+// ── SELECT BOOTH ──
+function selectBooth(b) {
+  selectedBooth = b;
+  redraw();
+  renderBoothList();
+
+  document.getElementById('selectedInfo').classList.add('show');
+  document.getElementById('siName').textContent  = b.name;
+  document.getElementById('siPrice').textContent = `$${Number(b.price).toLocaleString()} CAD`;
+
+  const btn = document.getElementById('bookBtn');
+  btn.disabled = false;
+  btn.textContent = `Reserve ${b.booth_ref} →`;
+}
+
+function deselectBooth() {
+  selectedBooth = null;
+  redraw();
+  renderBoothList();
+  document.getElementById('selectedInfo').classList.remove('show');
+  const btn = document.getElementById('bookBtn');
+  btn.disabled = true;
+  btn.textContent = 'Select a booth to continue';
+}
+
+// ── BOOTH LIST ──
+function renderBoothList() {
+  const el = document.getElementById('boothList');
+  let list = currentFilter === 'all' ? allBooths
+    : currentFilter === 'available' ? allBooths.filter(b => b.status === 'available')
+    : allBooths.filter(b => b.category === currentFilter);
+
+  if (list.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--ink3);font-size:12px;padding:30px 10px;">No booths match this filter.</div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(b => `
+    <div class="booth-item ${b.status !== 'available' ? 'unavailable' : ''} ${selectedBooth?.id === b.id ? 'selected' : ''}"
+         onclick="${b.status === 'available' ? `selectBoothById('${b.id}')` : ''}">
+      <div class="bi-top">
+        <span class="bi-ref">${b.booth_ref}</span>
+        <span class="bi-status status-${b.status}">${b.status}</span>
+      </div>
+      <div class="bi-name">${b.name}</div>
+      <div class="bi-type">${b.category}</div>
+      <div class="bi-price">$${Number(b.price).toLocaleString()}</div>
+      ${b.width_m && b.length_m ? `<div class="bi-size">${b.width_m}×${b.length_m} m</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function selectBoothById(id) {
+  const b = allBooths.find(x => x.id === id);
+  if (b) selectBooth(b);
+}
+
+function filterBooths(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderBoothList();
+  redraw();
+}
+
+// ── REALTIME ──
+function subscribeToBooths() {
+  sb.channel(`booths:${eventId}`)
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'booths', filter:`event_id=eq.${eventId}` },
+      payload => {
+        const idx = allBooths.findIndex(b => b.id === payload.new.id);
+        if (idx >= 0) { allBooths[idx] = { ...allBooths[idx], ...payload.new }; }
+        if (selectedBooth?.id === payload.new.id && payload.new.status !== 'available') {
+          deselectBooth();
+          showToast('⚠️', 'Booth just got reserved by someone else');
+        }
+        renderBoothList();
+        updateNavSpots();
+        redraw();
+      })
+    .subscribe();
+}
+
+// ── LOAD EVENT ──
+async function loadEvent() {
+  if (!eventId) { window.location.href = 'vancouver_platform.html'; return; }
+
+  const { data: event, error } = await sb
+    .from('events')
+    .select(`*, venues(*)`)
+    .eq('id', eventId)
+    .single();
+
+  if (error || !event) { showToast('✕', 'Event not found'); return; }
+
+  currentEvent = event;
+
+  // Update UI
+  document.title = `${event.name} — VenueMap`;
+  document.getElementById('navEventName').textContent = event.name;
+  document.getElementById('spTitle').textContent = event.name;
+
+  const venue = event.venues;
+  if (venue) {
+    document.getElementById('spSub').textContent = `📍 ${venue.name} · ${venue.location}`;
+    map.setView([venue.lat, venue.lng], venue.default_zoom || 17);
+
+    // Venue center marker
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateX(-50%);">
+        <div style="background:rgba(254,252,250,0.95);border:1.5px solid #d4620a;border-radius:8px;padding:4px 10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#d4620a;white-space:nowrap;box-shadow:0 4px 16px rgba(212,98,10,0.2);">${venue.icon||'📍'} ${venue.name}</div>
+        <div style="width:2px;height:10px;background:linear-gradient(to bottom,#d4620a,transparent);"></div>
+        <div style="width:8px;height:8px;background:#d4620a;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(212,98,10,0.5);"></div>
+      </div>`,
+      iconSize:[0,0], iconAnchor:[0,32]
+    });
+    L.marker([venue.lat, venue.lng], { icon, interactive:false }).addTo(map);
+  }
+
+  // Load booths
+  const { data: booths } = await sb
+    .from('booths')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('booth_ref');
+
+  allBooths = booths || [];
+  renderBoothList();
+  updateNavSpots();
+  subscribeToBooths();
+  setTimeout(resizeOverlay, 100);
+}
+
+function updateNavSpots() {
+  const available = allBooths.filter(b => b.status === 'available').length;
+  const total     = allBooths.length;
+  const el        = document.getElementById('navSpots');
+  el.textContent  = `${available} of ${total} booths left`;
+  el.className    = `nav-pill-tag ${available <= 10 ? 'low' : ''}`;
+}
+
+// ── BOOKING MODAL ──
+function openBookingModal() {
+  if (!selectedBooth) return;
+  modalStep = 1;
+  updateModalStep();
+  document.getElementById('bsName').textContent   = selectedBooth.name;
+  document.getElementById('bsDetail').textContent = `${selectedBooth.booth_ref} · ${selectedBooth.category} · ${currentEvent?.name}`;
+  document.getElementById('bsPrice').textContent  = `$${Number(selectedBooth.price).toLocaleString()}`;
+  document.getElementById('bookingModal').classList.add('open');
+}
+
+function closeBookingModal() {
+  document.getElementById('bookingModal').classList.remove('open');
+  modalStep = 1;
+}
+
+async function nextStep() {
+  if (modalStep === 1) {
+    // Validate
+    const email = document.getElementById('fEmail').value.trim();
+    const biz   = document.getElementById('fBizName').value.trim();
+    if (!email || !biz) { showToast('⚠️', 'Name and email required'); return; }
+
+    const price   = Number(selectedBooth.price);
+    const fee     = Math.round(price * 0.07);
+    const total   = price + fee;
+    document.getElementById('orderBoothName').textContent  = selectedBooth.name;
+    document.getElementById('orderBoothPrice').textContent = `$${price.toLocaleString()}`;
+    document.getElementById('orderFee').textContent        = `$${fee}`;
+    document.getElementById('orderTotal').textContent      = `$${total.toLocaleString()}`;
+
+    modalStep = 2;
+    updateModalStep();
+    document.getElementById('modalNextBtn').textContent = 'Confirm & Pay →';
+
+  } else if (modalStep === 2) {
+    // Create booking in Supabase
+    document.getElementById('modalNextBtn').textContent = 'Processing...';
+    document.getElementById('modalNextBtn').disabled = true;
+
+    try {
+      const price  = Number(selectedBooth.price);
+      const fee    = Math.round(price * 0.07);
+      const total  = price + fee;
+
+      // Get or create anonymous user session
+      let userId = (await sb.auth.getSession()).data.session?.user?.id;
+      if (!userId) {
+        // Sign up anonymously with email as identifier
+        const email = document.getElementById('fEmail').value.trim();
+        const { data } = await sb.auth.signInWithOtp({ email });
+        userId = null; // Will be set after OTP — for now create booking with null
+      }
+
+      const { data: booking, error } = await sb.from('bookings').insert({
+        booth_id:      selectedBooth.id,
+        event_id:      eventId,
+        vendor_id:     userId || '00000000-0000-0000-0000-000000000000', // placeholder
+        business_name: document.getElementById('fBizName').value.trim(),
+        business_type: document.getElementById('fBizType').value,
+        contact_email: document.getElementById('fEmail').value.trim(),
+        contact_phone: document.getElementById('fPhone').value.trim(),
+        booth_price:   price,
+        platform_fee:  fee,
+        total_amount:  total,
+        status:        'confirmed',
+      }).select().single();
+
+      if (error) throw error;
+
+      document.getElementById('bookingRef').textContent = `REF: VM-${booking.id.slice(0,8).toUpperCase()}`;
+      modalStep = 3;
+      updateModalStep();
+
+      // Update local booth status
+      const idx = allBooths.findIndex(b => b.id === selectedBooth.id);
+      if (idx >= 0) allBooths[idx].status = 'booked';
+      deselectBooth();
+
+    } catch (err) {
+      console.error(err);
+      showToast('✕', 'Booking failed — ' + (err.message || 'try again'));
+      document.getElementById('modalNextBtn').textContent = 'Confirm & Pay →';
+      document.getElementById('modalNextBtn').disabled = false;
+    }
+
+  } else {
+    closeBookingModal();
+  }
+}
+
+function updateModalStep() {
+  [1,2,3].forEach(i => {
+    document.getElementById(`modalStep${i}`).style.display = i === modalStep ? 'block' : 'none';
+    const dot = document.getElementById(`sd${i}`);
+    dot.classList.remove('active','done');
+    if (i === modalStep) dot.classList.add('active');
+    else if (i < modalStep) dot.classList.add('done');
+  });
+  const foot = document.getElementById('modalFoot');
+  if (modalStep === 3) {
+    foot.innerHTML = `<button class="btn-primary" onclick="closeBookingModal()" style="flex:1">Done ✓</button>`;
+  }
+}
+
+// ── TOAST ──
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${icon}</span> ${msg}`;
+  t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── INIT ──
+loadEvent();
+</script>
+</body>
+</html>
