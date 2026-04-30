@@ -219,6 +219,81 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
 .reveal-delay-1 { transition-delay: 0.1s; }
 .reveal-delay-2 { transition-delay: 0.2s; }
 .reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  /* Hide custom cursor on mobile */
+  #cursor { display: none; }
+  *, a, button { cursor: auto !important; }
+
+  /* Nav */
+  nav { padding: 0 20px; height: 54px; }
+  .nav-center { display: none; }
+  .nav-right { gap: 8px; }
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
+  .logo { font-size: 15px; }
+
+  /* Hero */
+  .hero { padding: 80px 20px 40px; grid-template-columns: 1fr !important; gap: 40px; min-height: auto; }
+  .hero-left { max-width: 100%; }
+  .hero-h1 { font-size: clamp(36px, 10vw, 52px); }
+  .hero-p { font-size: 14px; }
+  .hero-actions { flex-direction: column; gap: 10px; }
+  .btn-hero { width: 100%; text-align: center; justify-content: center; padding: 14px 20px; }
+  .hero-proof { gap: 20px; flex-wrap: wrap; }
+  .hero-right { width: 100%; }
+  .featured-card { width: 100%; }
+  .hero-float-badge { display: none; }
+  .hero-grid { display: none; }
+
+  /* Featured card */
+  .fc-title { font-size: 28px; }
+  .fc-map { height: 140px !important; }
+
+  /* Ticker */
+  .ticker { display: none; }
+
+  /* Sections */
+  .section { padding: 60px 20px; }
+  .section-h2 { font-size: clamp(28px, 7vw, 42px); }
+
+  /* Steps */
+  .steps { grid-template-columns: 1fr !important; gap: 16px; }
+  .step { padding: 20px; }
+
+  /* Events */
+  .events-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .events-grid { grid-template-columns: 1fr !important; }
+  .event-card { flex-direction: column !important; }
+  .event-card.featured { grid-column: span 1 !important; }
+  .event-visual { height: 160px !important; width: 100% !important; }
+  .event-details { display: none; }
+
+  /* For cards */
+  .for-cards { grid-template-columns: 1fr !important; gap: 16px; }
+
+  /* Stat band */
+  .stat-band-inner { grid-template-columns: 1fr 1fr !important; }
+  .sbi-num { font-size: 38px; }
+
+  /* CTA */
+  .cta-section { padding: 60px 20px; }
+  .cta-actions { flex-direction: column; align-items: center; gap: 10px; }
+  .btn-hero { max-width: 320px; }
+
+  /* Footer */
+  footer { padding: 40px 20px 28px; }
+  .footer-top { grid-template-columns: 1fr 1fr !important; gap: 28px; }
+  .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .hero-h1 { font-size: 32px; }
+  .footer-top { grid-template-columns: 1fr !important; }
+  .stat-band-inner { grid-template-columns: 1fr !important; }
+  .hero-proof { gap: 16px; }
+  .proof-num { font-size: 28px; }
+}
 </style>
 </head>
 <body>
