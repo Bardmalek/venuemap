@@ -284,7 +284,7 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
           </div>
           <div class="fc-map" style="position:relative;overflow:hidden;border-radius:10px;height:168px;padding:0;background:#1e2a1e;">
             <!-- Exact Tiregan background image -->
-            <img src="https://image2url.com/r2/default/images/1772232052982-9762ec3e-f714-4c4c-97e6-34483237440a.png"
+            <img src="https://www.image2url.com/r2/default/images/1772232052982-9762ec3e-f714-4c4c-97e6-34483237440a.png"
                  style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;">
             <!-- Booths overlay matching tiregan.html exact coordinates -->
             <div style="position:absolute;inset:0;">
@@ -647,6 +647,9 @@ async function loadEvents() {
 
 // ── UPDATE HERO CARD ──
 function updateHeroCard(ev) {
+  // Tiregan hero card is hardcoded — don't overwrite it
+  if (ev.name.toLowerCase().includes('tiregan')) return;
+
   const booths    = ev.booths || [];
   const available = booths.filter(b => b.status === 'available').length;
   const total     = booths.length;
