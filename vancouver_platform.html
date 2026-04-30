@@ -535,7 +535,7 @@ async function loadEvents() {
 
     return `
       <div class="event-card ${isFeatured ? 'featured' : ''} reveal ${i > 0 ? 'reveal-delay-' + Math.min(i,3) : ''}"
-           onclick="openEventPage('${ev.id}')" style="cursor:pointer;">
+           onclick="openEventPage('${ev.id}', '${ev.name.replace(/'/g, "\\'")}')" style="cursor:pointer;">
         <div class="event-visual ${bgClass}">
           ${isFeatured && available < 15 ? `<div class="event-badge-hot">🔥 Selling fast</div>` : ''}
           <div class="event-emoji">${ev.banner_emoji || '🎪'}</div>
@@ -593,7 +593,12 @@ function updateHeroCard(ev) {
 }
 
 // ── OPEN EVENT PAGE (booth map) ──
-function openEventPage(eventId) {
+function openEventPage(eventId, eventName) {
+  // Tiregan 2026 has its own booking site
+  if (eventName && eventName.toLowerCase().includes('tiregan')) {
+    window.location.href = 'https://tcicsbooking.com/tiregan.html';
+    return;
+  }
   window.location.href = `event.html?id=${eventId}`;
 }
 
