@@ -156,6 +156,12 @@ footer{border-top:1px solid var(--border);background:var(--white);padding:24px 2
 const SUPABASE_URL = 'https://ortjeciwbhxkptfyysda.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+function safeUrl(u) {
+  try { const p = new URL(String(u ?? '')); return (p.protocol === 'https:' || p.protocol === 'http:') ? p.href : '#'; }
+  catch { return '#'; }
+}
+
 const params = new URLSearchParams(window.location.search);
 const bookingId = params.get('booking');
 let currentUser = null;
@@ -203,13 +209,13 @@ function renderBooking(booking) {
   document.getElementById('statusBadge').innerHTML = statusBadge(booking.status);
   document.getElementById('boothRef').textContent = booking.booths?.booth_ref || 'Pending';
   document.getElementById('amount').textContent = `$${Number(booking.total_amount || 0).toLocaleString()}`;
-  document.getElementById('receiptState').textContent = booking.receipt_url || booking.receipt_sent_at ? 'Available' : 'Pending';
+  document.getElementById('receiptState').textContent = (booking.receipt_url || booking.receipt_sent_at) ? 'Available' : 'Pending';
   document.getElementById('businessName').textContent = booking.business_name || 'Business pending';
   renderTimeline(booking);
   const receiptHref = booking.receipt_url || booking.contract_url || booking.vendor_package_url || '';
   document.getElementById('actions').innerHTML = `
     <a class="btn" href="vendor.html">Open Dashboard</a>
-    ${receiptHref ? `<a class="btn primary" href="${receiptHref}" target="_blank" rel="noopener">Download Receipt</a>` : ''}
+    ${receiptHref ? `<a class="btn primary" href="${safeUrl(receiptHref)}" target="_blank" rel="noopener">Download Receipt</a>` : ''}
     <a class="btn" href="event.html?id=${booking.event_id}">View Event</a>
   `;
 }
@@ -243,7 +249,8 @@ function statusBadge(status) {
   const type = ['paid','checked_in','confirmed','booked'].includes(status) ? 'green'
     : ['payment_pending','payment_started','hold','pending','refund_requested'].includes(status) ? 'amber'
     : ['cancelled','refunded','expired'].includes(status) ? 'red' : 'gray';
-  return `<span class="badge ${type}">${String(status || 'unknown').replaceAll('_', ' ')}</span>`;
+  const label = String(status || 'unknown').replaceAll('_', ' ').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<span class="badge ${type}">${label}</span>`;
 }
 
 function formatDate(value) {

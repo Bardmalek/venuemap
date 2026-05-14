@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; connect-src 'self' https://ortjeciwbhxkptfyysda.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>VenueMap — Book a Booth</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -361,6 +365,15 @@ function hexToRgba(hex, a) {
   return `rgba(${r},${g},${b},${a})`;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function roundRect(c, x, y, w, h, r) {
   if(w<0){x+=w;w=-w;} if(h<0){y+=h;h=-h;} r=Math.min(r,w/2,h/2);
   c.beginPath();
@@ -496,15 +509,16 @@ function renderBoothList() {
 
   el.innerHTML = list.map(b => `
     <div class="booth-item ${b.status !== 'available' ? 'unavailable' : ''} ${selectedBooth?.id === b.id ? 'selected' : ''}"
-         onclick="${b.status === 'available' ? `selectBoothById('${b.id}')` : ''}">
+         data-booth-id="${escapeHtml(b.id)}"
+         onclick="${b.status === 'available' ? 'selectBoothById(this.dataset.boothId)' : ''}">
       <div class="bi-top">
-        <span class="bi-ref">${b.booth_ref}</span>
-        <span class="bi-status status-${b.status}">${b.status}</span>
+        <span class="bi-ref">${escapeHtml(b.booth_ref)}</span>
+        <span class="bi-status status-${escapeHtml(b.status)}">${escapeHtml(b.status)}</span>
       </div>
-      <div class="bi-name">${b.name}</div>
-      <div class="bi-type">${b.category}</div>
+      <div class="bi-name">${escapeHtml(b.name)}</div>
+      <div class="bi-type">${escapeHtml(b.category)}</div>
       <div class="bi-price">$${Number(b.price).toLocaleString()}</div>
-      ${b.width_m && b.length_m ? `<div class="bi-size">${b.width_m}×${b.length_m} m</div>` : ''}
+      ${b.width_m && b.length_m ? `<div class="bi-size">${escapeHtml(b.width_m)}×${escapeHtml(b.length_m)} m</div>` : ''}
     </div>
   `).join('');
   if (list.every(b => b.status !== 'available')) {
@@ -520,7 +534,7 @@ function renderWaitlistPanel() {
     <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="waitEmail" type="email"></div>
     <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="waitBiz"></div>
     <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="waitPhone"></div>
-    <button class="btn-primary" style="width:100%" onclick="joinWaitlist('${category}')">Join Waitlist</button>
+    <button class="btn-primary" style="width:100%" data-waitlist-category="${escapeHtml(category)}" onclick="joinWaitlist(this.dataset.waitlistCategory)">Join Waitlist</button>
   </div>`;
 }
 
@@ -529,15 +543,13 @@ async function joinWaitlist(category) {
   const businessName = document.getElementById('waitBiz')?.value.trim();
   const phone = document.getElementById('waitPhone')?.value.trim();
   if (!email || !businessName) return showToast('Required', 'Email and business name required');
-  const { error } = await sb.from('waitlists').insert({
-    event_id: eventId,
-    booth_category: category || null,
-    vendor_email: email,
-    business_name: businessName,
-    phone,
-    status: 'active',
+  const response = await fetch(`${FUNCTIONS_URL}/join-waitlist`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ event_id: eventId, vendor_email: email, business_name: businessName, phone: phone || null, booth_category: category || null }),
   });
-  if (error && !String(error.message).includes('duplicate')) return showToast('Error', error.message);
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) return showToast('Error', payload.error || 'Unable to join waitlist');
   showToast('Waitlist', 'You are on the waitlist');
 }
 
@@ -600,7 +612,7 @@ async function loadEvent() {
     const icon = L.divIcon({
       className:'',
       html:`<div style="display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateX(-50%);">
-        <div style="background:rgba(254,252,250,0.95);border:1.5px solid #d4620a;border-radius:8px;padding:4px 10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#d4620a;white-space:nowrap;box-shadow:0 4px 16px rgba(212,98,10,0.2);">VM ${venue.name}</div>
+        <div style="background:rgba(254,252,250,0.95);border:1.5px solid #d4620a;border-radius:8px;padding:4px 10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#d4620a;white-space:nowrap;box-shadow:0 4px 16px rgba(212,98,10,0.2);">VM ${escapeHtml(venue.name || 'Venue')}</div>
         <div style="width:2px;height:10px;background:linear-gradient(to bottom,#d4620a,transparent);"></div>
         <div style="width:8px;height:8px;background:#d4620a;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(212,98,10,0.5);"></div>
       </div>`,
@@ -621,6 +633,7 @@ async function loadEvent() {
   renderBoothList();
   updateNavSpots();
   subscribeToBooths();
+  await restoreProfileGateResume();
   setTimeout(resizeOverlay, 100);
 }
 
@@ -672,11 +685,11 @@ async function nextStep() {
     if (!email || !biz) { showToast('Required', 'Business name and email required'); return; }
 
     const price   = Number(selectedBooth.price);
-    const fee     = Math.round(price * 0.07);
-    const total   = price + fee;
+    const fee     = Math.round(price * 0.07 * 100) / 100;
+    const total   = Math.round((price + fee) * 100) / 100;
     document.getElementById('orderBoothName').textContent  = selectedBooth.name;
     document.getElementById('orderBoothPrice').textContent = `$${price.toLocaleString()}`;
-    document.getElementById('orderFee').textContent        = `$${fee}`;
+    document.getElementById('orderFee').textContent        = `$${fee.toLocaleString()}`;
     document.getElementById('orderTotal').textContent      = `$${total.toLocaleString()}`;
 
     modalStep = 2;
@@ -783,6 +796,44 @@ function applyVendorPrefill() {
   if (names.length > 1) document.getElementById('fLastName').value = names.slice(1).join(' ');
 }
 
+async function restoreProfileGateResume() {
+  let resume = null;
+  try {
+    resume = JSON.parse(localStorage.getItem('venuemap_profile_gate_resume') || 'null');
+  } catch (_) {
+    resume = null;
+  }
+  if (!resume || resume.event_id !== eventId || !resume.currentHold?.booking?.id) return;
+
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return;
+
+  currentHold = resume.currentHold;
+  const profile = resume.profile || {};
+  const names = String(profile.contact_name || '').split(' ');
+  document.getElementById('fFirstName').value = names[0] || '';
+  document.getElementById('fLastName').value = names.slice(1).join(' ');
+  document.getElementById('fBizName').value = profile.business_name || '';
+  document.getElementById('fBizType').value = profile.business_type || '';
+  document.getElementById('fEmail').value = data.session.user.email || profile.contact_email || '';
+  document.getElementById('fPhone').value = profile.phone || '';
+
+  const booth = allBooths.find(item => item.id === currentHold.booking.booth_id);
+  if (booth) {
+    selectedBooth = booth;
+    document.getElementById('bsName').textContent = booth.name;
+    document.getElementById('bsDetail').textContent = `${booth.booth_ref} · ${booth.category} · ${currentEvent?.name}`;
+    document.getElementById('bsPrice').textContent = `$${Number(booth.price).toLocaleString()}`;
+  }
+  hydrateProfileGateFields();
+  profileGateOpen = true;
+  modalStep = 3;
+  updateModalStep();
+  document.getElementById('bookingModal').classList.add('open');
+  localStorage.removeItem('venuemap_profile_gate_resume');
+  showToast('Welcome back', 'Finish your Vendor Passport to continue');
+}
+
 function getCheckoutProfile() {
   const firstName = document.getElementById('gFirstName').value.trim() || document.getElementById('fFirstName').value.trim();
   const lastName = document.getElementById('gLastName').value.trim() || document.getElementById('fLastName').value.trim();
@@ -821,9 +872,26 @@ async function completeProfileAndContinue() {
   }
   const btn = document.querySelector('#modalFoot .btn-primary');
   if (btn) btn.textContent = 'Saving...';
+  const { data: passportSession } = await sb.auth.getSession();
+  const passportToken = passportSession.session?.access_token;
+  if (!passportToken) {
+    localStorage.setItem('venuemap_profile_gate_resume', JSON.stringify({
+      event_id: eventId,
+      currentHold,
+      profile,
+    }));
+    const { error } = await sb.auth.signInWithOtp({
+      email: profile.contact_email,
+      options: { emailRedirectTo: window.location.href.split('#')[0] },
+    });
+    if (btn) btn.textContent = 'Save Profile & Continue →';
+    if (error) return showToast('Error', error.message);
+    showToast('Check email', 'Open the magic link, then this hold will resume');
+    return;
+  }
   const response = await fetch(`${FUNCTIONS_URL}/complete-vendor-passport`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${passportToken}` },
     body: JSON.stringify(profile),
   });
   const payload = await response.json().catch(() => ({}));

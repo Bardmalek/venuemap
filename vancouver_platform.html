@@ -601,6 +601,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 const BG_CLASSES = ['ev1','ev2','ev3','ev4','ev5'];
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function eventCardAction(eventId, eventName) {
+  return `openEventPage('${String(eventId).replace(/'/g, "\\'")}', '${String(eventName || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')`;
+}
+
 // ── Custom cursor ──
 const cursor = document.getElementById('cursor');
 let cursorX = 0, cursorY = 0, rafPending = false;
@@ -667,7 +675,10 @@ async function loadEvents() {
   grid.innerHTML = events.map((ev, i) => {
     const booths    = ev.booths || [];
     const available = booths.filter(b => b.status === 'available').length;
-    const isTiregan = ev.name.toLowerCase().includes('tiregan');
+    const eventName = ev.name || 'Untitled event';
+    const venueName = ev.venues?.name || 'Vancouver';
+    const venueLocation = ev.venues?.location || '';
+    const isTiregan = eventName.toLowerCase().includes('tiregan');
     const minPrice  = isTiregan ? 350 : (booths.length ? Math.min(...booths.map(b => b.price)) : 0);
     const bgClass   = BG_CLASSES[i % BG_CLASSES.length];
     const isFeatured = i === 0;
@@ -678,18 +689,18 @@ async function loadEvents() {
 
     return `
       <div class="event-card ${isFeatured ? 'featured' : ''} reveal ${i > 0 ? 'reveal-delay-' + Math.min(i,3) : ''}"
-           onclick="openEventPage('${ev.id}', '${ev.name.replace(/'/g, "\\'")}')" style="cursor:pointer;">
+           onclick="${eventCardAction(ev.id, eventName)}" style="cursor:pointer;">
         <div class="event-visual ${bgClass}" style="${isTiregan ? 'padding:0;' : ''}">
           ${isFeatured && available < 15 && !isTiregan ? `<div class="event-badge-hot">Selling fast</div>` : ''}
           ${coverImg}
         </div>
         <div class="event-body">
-          <div class="event-org">${ev.venues?.name || 'Vancouver'}</div>
-          <div class="event-title">${ev.name}</div>
+          <div class="event-org">${escapeHtml(venueName)}</div>
+          <div class="event-title">${escapeHtml(eventName)}</div>
           ${isFeatured ? `
             <div class="event-details">
               ${startFmt ? `<div class="event-detail">Date · ${startFmt}</div>` : ''}
-              ${ev.venues?.location ? `<div class="event-detail">Venue · ${ev.venues.location}</div>` : ''}
+              ${venueLocation ? `<div class="event-detail">Venue · ${escapeHtml(venueLocation)}</div>` : ''}
               ${ev.expected_attendance ? `<div class="event-detail">Attendance · ${ev.expected_attendance.toLocaleString()}+ expected</div>` : ''}
               ${!isTiregan ? `<div class="event-detail">Inventory · ${booths.length} booths</div>` : ''}
             </div>` : ''}
@@ -729,7 +740,12 @@ function updateHeroCard(ev) {
   const priceEl  = document.querySelector('.fc-price');
 
   if (orgEl)    orgEl.textContent    = ev.venues?.name || 'Vancouver';
-  if (titleEl)  titleEl.innerHTML    = ev.name.replace(' ', '<br>');
+  if (titleEl) {
+    titleEl.textContent = '';
+    const parts = String(ev.name || 'Untitled event').split(' ');
+    titleEl.append(parts.shift() || '');
+    if (parts.length) titleEl.append(document.createElement('br'), parts.join(' '));
+  }
   if (progFill) progFill.style.width = pct + '%';
   if (progVal)  progVal.textContent  = `${available} of ${total} remaining`;
   if (priceEl)  priceEl.innerHTML    = `From <strong>$${minPrice.toLocaleString()}</strong> <span style="font-size:11px;color:var(--ink3)">CAD</span>`;

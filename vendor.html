@@ -256,6 +256,14 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function safeUrl(u) {
+  try { const p = new URL(String(u ?? '')); return (p.protocol === 'https:' || p.protocol === 'http:') ? p.href : '#'; }
+  catch { return '#'; }
+}
+
 let currentUser = null;
 let vendorEmail = '';
 let bookings = [];
@@ -369,7 +377,7 @@ async function savePassport() {
   if (isPassportComplete(payload)) payload.profile_completed_at = new Date().toISOString();
   const query = passport?.id
     ? sb.from('vendor_passports').update(payload).eq('id', passport.id).select().single()
-    : sb.from('vendor_passports').insert(payload).select().single();
+    : sb.from('vendor_passports').upsert(payload, { onConflict: 'contact_email,business_name' }).select().single();
   const { data, error } = await query;
   if (error) return showToast(error.message);
   passport = data;
@@ -416,23 +424,23 @@ function renderBookingCard(booking) {
   return `<article class="booking-card">
     <div class="booking-top">
       <div>
-        <div class="booking-event">${event.name || 'Untitled event'}</div>
-        <div class="booking-meta">${formatDate(event.start_date)} · ${event.venues?.name || 'Venue pending'}</div>
+        <div class="booking-event">${escapeHtml(event.name || 'Untitled event')}</div>
+        <div class="booking-meta">${escapeHtml(formatDate(event.start_date))} · ${escapeHtml(event.venues?.name || 'Venue pending')}</div>
       </div>
       ${statusBadge(booking.status)}
     </div>
     <div class="detail-grid">
-      <div class="detail"><div class="detail-label">Booth</div><div class="detail-value">${booth.booth_ref || 'Pending'}</div></div>
-      <div class="detail"><div class="detail-label">Type</div><div class="detail-value">${booth.category || booking.business_type || 'Standard'}</div></div>
+      <div class="detail"><div class="detail-label">Booth</div><div class="detail-value">${escapeHtml(booth.booth_ref || 'Pending')}</div></div>
+      <div class="detail"><div class="detail-label">Type</div><div class="detail-value">${escapeHtml(booth.category || booking.business_type || 'Standard')}</div></div>
       <div class="detail"><div class="detail-label">Amount</div><div class="detail-value">$${Number(booking.total_amount || 0).toLocaleString()}</div></div>
-      <div class="detail"><div class="detail-label">Organizer</div><div class="detail-value">${event.organizations?.name || 'VenueMap'}</div></div>
+      <div class="detail"><div class="detail-label">Organizer</div><div class="detail-value">${escapeHtml(event.organizations?.name || 'VenueMap')}</div></div>
     </div>
     <div class="booking-actions">
-      <a class="btn" href="booking-confirmation.html?booking=${booking.id}">View Details</a>
-      ${receiptHref ? `<a class="btn" href="${receiptHref}" target="_blank" rel="noopener">Download Receipt</a>` : ''}
-      ${isPast && future ? `<button class="btn primary" onclick="rebook('${booking.id}')">Rebook</button>` : ''}
-      ${isPast && !future ? `<button class="btn" onclick="followOrganizer('${booking.id}')">Notify me when this organizer announces their next event</button>` : ''}
-      ${canRefund ? `<button class="btn" onclick="requestRefund('${booking.id}')">Request Refund</button>` : ''}
+      <a class="btn" href="booking-confirmation.html?booking=${escapeHtml(booking.id)}">View Details</a>
+      ${receiptHref ? `<a class="btn" href="${safeUrl(receiptHref)}" target="_blank" rel="noopener">Download Receipt</a>` : ''}
+      ${isPast && future ? `<button class="btn primary" onclick="rebook('${escapeHtml(booking.id)}')">Rebook</button>` : ''}
+      ${isPast && !future ? `<button class="btn" onclick="followOrganizer('${escapeHtml(booking.id)}')">Notify me when this organizer announces their next event</button>` : ''}
+      ${canRefund ? `<button class="btn" onclick="requestRefund('${escapeHtml(booking.id)}')">Request Refund</button>` : ''}
     </div>
   </article>`;
 }
@@ -447,10 +455,10 @@ function renderReceipts() {
   el.innerHTML = rows.map(booking => {
     const href = booking.receipt_url || booking.contract_url || booking.vendor_package_url || '';
     return `<div class="receipt-row">
-      <div><strong>${booking.events?.name || 'Untitled event'}</strong><div class="booking-meta">${booking.booths?.booth_ref || 'Booth pending'}</div></div>
-      <div class="td-mono">${formatDate(booking.paid_at || booking.created_at)}</div>
+      <div><strong>${escapeHtml(booking.events?.name || 'Untitled event')}</strong><div class="booking-meta">${escapeHtml(booking.booths?.booth_ref || 'Booth pending')}</div></div>
+      <div class="td-mono">${escapeHtml(formatDate(booking.paid_at || booking.receipt_sent_at || booking.created_at))}</div>
       <div class="td-mono">$${Number(booking.total_amount || 0).toLocaleString()}</div>
-      ${href ? `<a class="btn" href="${href}" target="_blank" rel="noopener">Download</a>` : `<span class="badge gray">Pending</span>`}
+      ${href ? `<a class="btn" href="${safeUrl(href)}" target="_blank" rel="noopener">Download</a>` : `<span class="badge gray">Pending</span>`}
     </div>`;
   }).join('');
 }

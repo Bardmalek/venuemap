@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://ortjeciwbhxkptfyysda.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>VenueMap — CS Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -433,7 +437,12 @@ tr:hover td{background:var(--bg2);}
 <script>
 const SUPABASE_URL  = 'https://ortjeciwbhxkptfyysda.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 let currentUser = null;
 let allBookings = [], allUsers = [], allEvents = [], allBooths = [];
@@ -548,9 +557,9 @@ function renderOverview() {
 
   const tbody = document.getElementById('oRecentBookings');
   tbody.innerHTML = allBookings.slice(0,10).map(b => `<tr>
-    <td class="td-mono">${b.id.slice(0,8).toUpperCase()}</td>
-    <td>${b.contact_email || '—'}</td>
-    <td class="td-mono">${b.booths?.booth_ref || '—'}</td>
+    <td class="td-mono">${escapeHtml(b.id.slice(0,8).toUpperCase())}</td>
+    <td>${escapeHtml(b.contact_email || '—')}</td>
+    <td class="td-mono">${escapeHtml(b.booths?.booth_ref || '—')}</td>
     <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
     <td>${badge(b.status)}</td>
   </tr>`).join('') || '<tr><td colspan="5" class="empty">No bookings yet</td></tr>';
@@ -560,7 +569,7 @@ function renderOverview() {
 function startRealtimeListeners() {
   sb.channel('cs-realtime')
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'bookings' }, payload => {
-      addActivity('＋', `New booking`, `${payload.new.contact_email || 'Vendor'} booked booth — $${Number(payload.new.total_amount).toLocaleString()}`, 'green');
+      addActivity('＋', `New booking`, `${escapeHtml(payload.new.contact_email || 'Vendor')} booked booth — $${Number(payload.new.total_amount).toLocaleString()}`, 'green');
       allBookings.unshift(payload.new);
       filteredBookings = [...allBookings];
       renderBookings();
@@ -568,7 +577,7 @@ function startRealtimeListeners() {
       updateSidebarCounts();
     })
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'bookings' }, payload => {
-      addActivity('↻', `Booking updated`, `Status changed to ${payload.new.status}`, 'blue');
+      addActivity('↻', `Booking updated`, `Status changed to ${escapeHtml(payload.new.status)}`, 'blue');
       const idx = allBookings.findIndex(b => b.id === payload.new.id);
       if (idx >= 0) allBookings[idx] = { ...allBookings[idx], ...payload.new };
       filteredBookings = [...allBookings];
@@ -576,14 +585,14 @@ function startRealtimeListeners() {
       renderOverview();
     })
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'profiles' }, payload => {
-      addActivity('◎', `New user signed up`, payload.new.email, 'amber');
+      addActivity('◎', `New user signed up`, escapeHtml(payload.new.email), 'amber');
       allUsers.unshift(payload.new);
       filteredUsers = [...allUsers];
       renderUsers();
       updateSidebarCounts();
     })
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'events' }, payload => {
-      addActivity('◆', `New event published`, payload.new.name, 'green');
+      addActivity('◆', `New event published`, escapeHtml(payload.new.name), 'green');
     })
     .subscribe();
 }
@@ -629,18 +638,17 @@ function renderBookings() {
   const tbody = document.getElementById('bookingsTable');
   if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="10"><div class="empty">No bookings found</div></td></tr>`; return; }
   tbody.innerHTML = filteredBookings.map(b => `<tr>
-    <td class="td-mono" style="color:var(--amber);font-weight:700;">VM-${b.id.slice(0,8).toUpperCase()}</td>
-    <td class="td-bold">${b.contact_email || '—'}</td>
-    <td>${b.business_name || '—'}</td>
-    <td>${b.events?.name || '—'}</td>
-    <td class="td-mono">${b.booths?.booth_ref || '—'}</td>
+    <td class="td-mono" style="color:var(--amber);font-weight:700;">VM-${escapeHtml(b.id.slice(0,8).toUpperCase())}</td>
+    <td class="td-bold">${escapeHtml(b.contact_email || '—')}</td>
+    <td>${escapeHtml(b.business_name || '—')}</td>
+    <td>${escapeHtml(b.events?.name || '—')}</td>
+    <td class="td-mono">${escapeHtml(b.booths?.booth_ref || '—')}</td>
     <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
     <td class="td-mono" style="color:var(--ink3);">$${Number(b.platform_fee).toLocaleString()}</td>
     <td>${badge(b.status)}</td>
     <td class="td-mono">${fmtDate(b.created_at)}</td>
     <td><div class="td-actions">
       ${b.status === 'pending'    ? `<button class="action-btn sm success" onclick="setBookingStatus('${b.id}','confirmed')">Confirm</button>` : ''}
-      ${b.status === 'confirmed'  ? `<button class="action-btn sm success" onclick="setBookingStatus('${b.id}','paid')">Mark Paid</button>` : ''}
       ${b.status === 'paid'       ? `<button class="action-btn sm success" onclick="setBookingStatus('${b.id}','checked_in')">Check In</button>` : ''}
       ${!['cancelled','refunded'].includes(b.status) ? `<button class="action-btn sm danger" onclick="setBookingStatus('${b.id}','cancelled')">Cancel</button>` : ''}
       ${b.status === 'cancelled'  ? `<button class="action-btn sm danger" onclick="setBookingStatus('${b.id}','refunded')">Refund</button>` : ''}
@@ -655,9 +663,9 @@ function renderUsers() {
   tbody.innerHTML = filteredUsers.map(u => {
     const bookingCount = allBookings.filter(b => b.vendor_id === u.id).length;
     return `<tr>
-      <td class="td-bold">${u.email}</td>
-      <td>${u.full_name || '—'}</td>
-      <td>${u.company || '—'}</td>
+      <td class="td-bold">${escapeHtml(u.email)}</td>
+      <td>${escapeHtml(u.full_name || '—')}</td>
+      <td>${escapeHtml(u.company || '—')}</td>
       <td>${roleBadge(u.role)}</td>
       <td class="td-mono">${bookingCount}</td>
       <td class="td-mono">${fmtDate(u.created_at)}</td>
@@ -684,7 +692,7 @@ function renderOrganizers() {
     const bookings = allBookings.filter(b => events.some(e => e.id === b.event_id)).length;
     const fmt = v => v >= 1000 ? `$${(v/1000).toFixed(1)}k` : `$${v}`;
     return `<tr>
-      <td class="td-bold">${u.email}</td>
+      <td class="td-bold">${escapeHtml(u.email)}</td>
       <td class="td-mono">${events.length}</td>
       <td class="td-mono">${booths.length}</td>
       <td class="td-mono">${bookings}</td>
@@ -706,9 +714,9 @@ function renderCSEvents() {
     const revenue  = booths.reduce((s, b) => s + Number(b.price), 0);
     const org      = allUsers.find(u => u.id === e.organizer_id);
     return `<tr>
-      <td class="td-bold">${e.name}</td>
-      <td>${org?.email || '—'}</td>
-      <td>${e.venues?.name || '—'}</td>
+      <td class="td-bold">${escapeHtml(e.name)}</td>
+      <td>${escapeHtml(org?.email || '—')}</td>
+      <td>${escapeHtml(e.venues?.name || '—')}</td>
       <td class="td-mono">${booths.length}</td>
       <td class="td-mono">${booked} / ${booths.length}</td>
       <td class="td-mono">$${revenue.toLocaleString()}</td>
@@ -728,10 +736,10 @@ function renderCSBooths() {
   const tbody = document.getElementById('csBoothsTable');
   if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No booths</div></td></tr>`; return; }
   tbody.innerHTML = filteredBooths.map(b => `<tr>
-    <td class="td-mono">${b.booth_ref}</td>
-    <td class="td-bold">${b.name}</td>
-    <td>${b.events?.name || '—'}</td>
-    <td>${b.category}</td>
+    <td class="td-mono">${escapeHtml(b.booth_ref)}</td>
+    <td class="td-bold">${escapeHtml(b.name)}</td>
+    <td>${escapeHtml(b.events?.name || '—')}</td>
+    <td>${escapeHtml(b.category)}</td>
     <td class="td-mono">$${Number(b.price).toLocaleString()}</td>
     <td>${badge(b.status)}</td>
     <td><div class="td-actions">
@@ -772,7 +780,7 @@ async function lookupBooking() {
   }
 
   if (!booking) {
-    result.innerHTML = `<div class="note-box red">No booking found for <strong>${q}</strong>. Double-check the reference code or email.</div>`;
+    result.innerHTML = `<div class="note-box red">No booking found for <strong>${escapeHtml(q)}</strong>. Double-check the reference code or email.</div>`;
     return;
   }
 
@@ -780,31 +788,30 @@ async function lookupBooking() {
     <div class="booking-detail">
       <div class="bd-header">
         <div>
-          <div class="bd-ref">VM-${booking.id.slice(0,8).toUpperCase()}</div>
-          <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Booking ID: ${booking.id}</div>
+          <div class="bd-ref">VM-${escapeHtml(booking.id.slice(0,8).toUpperCase())}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Booking ID: ${escapeHtml(booking.id)}</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           ${badge(booking.status)}
           ${booking.status === 'pending'   ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','confirmed');lookupBooking()">Confirm</button>` : ''}
-          ${booking.status === 'confirmed' ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','paid');lookupBooking()">Mark Paid</button>` : ''}
           ${booking.status === 'paid'      ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','checked_in');lookupBooking()">Check In</button>` : ''}
           ${!['cancelled','refunded'].includes(booking.status) ? `<button class="action-btn danger" onclick="setBookingStatus('${booking.id}','cancelled');lookupBooking()">Cancel</button>` : ''}
         </div>
       </div>
       <div class="bd-grid">
-        <div><div class="bd-item-label">Vendor Email</div><div class="bd-item-val">${booking.contact_email || '—'}</div></div>
-        <div><div class="bd-item-label">Business Name</div><div class="bd-item-val">${booking.business_name || '—'}</div></div>
-        <div><div class="bd-item-label">Business Type</div><div class="bd-item-val">${booking.business_type || '—'}</div></div>
-        <div><div class="bd-item-label">Phone</div><div class="bd-item-val">${booking.contact_phone || '—'}</div></div>
-        <div><div class="bd-item-label">Event</div><div class="bd-item-val">${booking.events?.name || '—'}</div></div>
-        <div><div class="bd-item-label">Booth</div><div class="bd-item-val">${booking.booths?.booth_ref || '—'} — ${booking.booths?.name || ''}</div></div>
+        <div><div class="bd-item-label">Vendor Email</div><div class="bd-item-val">${escapeHtml(booking.contact_email || '—')}</div></div>
+        <div><div class="bd-item-label">Business Name</div><div class="bd-item-val">${escapeHtml(booking.business_name || '—')}</div></div>
+        <div><div class="bd-item-label">Business Type</div><div class="bd-item-val">${escapeHtml(booking.business_type || '—')}</div></div>
+        <div><div class="bd-item-label">Phone</div><div class="bd-item-val">${escapeHtml(booking.contact_phone || '—')}</div></div>
+        <div><div class="bd-item-label">Event</div><div class="bd-item-val">${escapeHtml(booking.events?.name || '—')}</div></div>
+        <div><div class="bd-item-label">Booth</div><div class="bd-item-val">${escapeHtml(booking.booths?.booth_ref || '—')} — ${escapeHtml(booking.booths?.name || '')}</div></div>
         <div><div class="bd-item-label">Booth Price</div><div class="bd-item-val">$${Number(booking.booth_price).toLocaleString()}</div></div>
         <div><div class="bd-item-label">Platform Fee (7%)</div><div class="bd-item-val">$${Number(booking.platform_fee).toLocaleString()}</div></div>
         <div><div class="bd-item-label">Total Charged</div><div class="bd-item-val" style="color:var(--amber);">$${Number(booking.total_amount).toLocaleString()}</div></div>
         <div><div class="bd-item-label">Booked At</div><div class="bd-item-val">${fmtDateTime(booking.created_at)}</div></div>
         <div><div class="bd-item-label">Paid At</div><div class="bd-item-val">${booking.paid_at ? fmtDateTime(booking.paid_at) : '—'}</div></div>
         <div><div class="bd-item-label">Checked In</div><div class="bd-item-val">${booking.checked_in_at ? fmtDateTime(booking.checked_in_at) : '—'}</div></div>
-        ${booking.notes ? `<div style="grid-column:1/-1"><div class="bd-item-label">Notes</div><div class="bd-item-val">${booking.notes}</div></div>` : ''}
+        ${booking.notes ? `<div style="grid-column:1/-1"><div class="bd-item-label">Notes</div><div class="bd-item-val">${escapeHtml(booking.notes)}</div></div>` : ''}
       </div>
     </div>`;
 }
@@ -815,12 +822,12 @@ function openUserModal(id) {
   if (!u) return;
   editingUserId = id;
   document.getElementById('userModalBody').innerHTML = `
-    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="umEmail" value="${u.email}" readonly style="opacity:0.6;"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="umEmail" value="${escapeHtml(u.email)}" readonly style="opacity:0.6;"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="umName" value="${u.full_name || ''}"></div>
-      <div class="form-group"><label class="form-label">Company</label><input class="form-input" id="umCompany" value="${u.company || ''}"></div>
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="umName" value="${escapeHtml(u.full_name || '')}"></div>
+      <div class="form-group"><label class="form-label">Company</label><input class="form-input" id="umCompany" value="${escapeHtml(u.company || '')}"></div>
     </div>
-    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="umPhone" value="${u.phone || ''}"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="umPhone" value="${escapeHtml(u.phone || '')}"></div>
     <div class="form-group"><label class="form-label">Role</label>
       <select class="form-select" id="umRole">
         <option value="vendor" ${u.role==='vendor'?'selected':''}>Vendor</option>
@@ -850,8 +857,15 @@ async function saveUserChanges() {
 
 // ── ACTIONS ──
 async function setBookingStatus(id, status) {
-  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
-  if (error) { showToast('Error', error.message); return; }
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData.session?.access_token;
+  const response = await fetch(`${FUNCTIONS_URL}/update-booking-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ booking_id: id, status }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) { showToast('Error', payload.error || 'Unable to update booking'); return; }
   showToast('Updated', `Booking → ${status}`);
   await loadBookings();
   renderOverview();
@@ -947,7 +961,7 @@ function badge(status) {
     available:'bg', hold:'by', reserved:'by', payment_started:'by', payment_pending:'br', booked:'br', maintenance:'bgr',
     pending:'by', confirmed:'ba', paid:'bg', checked_in:'bg', refund_requested:'by', refunded:'bgr', expired:'bgr'
   };
-  return `<span class="badge ${map[status]||'bgr'}">${formatStatus(status)}</span>`;
+  return `<span class="badge ${map[status]||'bgr'}">${escapeHtml(formatStatus(status))}</span>`;
 }
 
 function formatStatus(status) {
@@ -956,7 +970,7 @@ function formatStatus(status) {
 
 function roleBadge(role) {
   const map = { vendor:'bgr', organizer:'ba', city_admin:'bg', super_admin:'br' };
-  return `<span class="badge ${map[role]||'bgr'}">${role}</span>`;
+  return `<span class="badge ${map[role]||'bgr'}">${escapeHtml(String(role || ''))}</span>`;
 }
 
 function fmtDate(d) {

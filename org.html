@@ -112,9 +112,24 @@ footer{border-top:1px solid var(--border);background:var(--white);padding:24px 2
 const SUPABASE_URL = 'https://ortjeciwbhxkptfyysda.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-const slug = new URLSearchParams(window.location.search).get('slug') || 'tcics';
+const slug = new URLSearchParams(window.location.search).get('slug');
+if (!slug) { renderMissing(); }
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function safeUrl(value) {
+  try {
+    const url = new URL(String(value || ''), window.location.href);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch (_) {
+    return '';
+  }
+}
 
 async function init() {
+  if (!slug) return;
   const { data: org, error } = await sb.from('organizations').select('*').eq('slug', slug).single();
   if (error || !org) return renderMissing();
   const { data: events } = await sb
@@ -131,15 +146,16 @@ function renderOrg(org, events) {
   const past = events.filter(event => event.end_date && new Date(event.end_date) < new Date());
   const booths = events.flatMap(event => event.booths || []);
   const booked = booths.filter(booth => ['booked','paid','payment_pending','reserved'].includes(booth.status)).length;
-  const banner = org.banner_url || '';
+  const banner = safeUrl(org.banner_url);
+  const logo = safeUrl(org.logo_url);
   document.getElementById('hero').className = 'hero';
   document.getElementById('hero').innerHTML = `
-    <div class="hero-img" style="${banner ? `background-image:url('${banner}')` : ''}"></div>
+    <div class="hero-img" style="${banner ? `background-image:url('${escapeHtml(banner)}')` : ''}"></div>
     <div class="hero-content">
-      ${org.logo_url ? `<img class="org-logo" src="${org.logo_url}" alt="${org.name} logo">` : ''}
+      ${logo ? `<img class="org-logo" src="${escapeHtml(logo)}" alt="${escapeHtml(org.name)} logo">` : ''}
       <div class="eyebrow">Organizer profile</div>
-      <h1>${org.name}</h1>
-      <p class="hero-copy">${org.description || 'A VenueMap organizer profile with live events, event history, and demand proof.'}</p>
+      <h1>${escapeHtml(org.name)}</h1>
+      <p class="hero-copy">${escapeHtml(org.description || 'A VenueMap organizer profile with live events, event history, and demand proof.')}</p>
     </div>`;
   document.getElementById('stats').innerHTML = `
     <div class="stat"><div class="stat-label">Live Events</div><div class="stat-num">${live.length}</div></div>
@@ -155,9 +171,9 @@ function renderEvent(event) {
   const total = booths.length;
   const href = event.status === 'published' ? `event.html?id=${event.id}` : '#';
   return `<a class="event-card" href="${href}">
-    <div class="event-title">${event.name}</div>
-    <div class="event-meta">${formatDate(event.start_date)} · ${event.venues?.name || 'Venue pending'}</div>
-    <div class="event-desc">${event.description || 'Event details and booth inventory are managed through VenueMap.'}</div>
+    <div class="event-title">${escapeHtml(event.name)}</div>
+    <div class="event-meta">${escapeHtml(formatDate(event.start_date))} · ${escapeHtml(event.venues?.name || 'Venue pending')}</div>
+    <div class="event-desc">${escapeHtml(event.description || 'Event details and booth inventory are managed through VenueMap.')}</div>
     <span class="badge">${available} of ${total} booths open</span>
   </a>`;
 }

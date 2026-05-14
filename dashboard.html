@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://ortjeciwbhxkptfyysda.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>VenueMap — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -427,7 +431,12 @@ tr:hover td{background:var(--bg2);}
 <script>
 const SUPABASE_URL  = 'https://ortjeciwbhxkptfyysda.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 let currentUser = null;
 let allEvents = [], allBookings = [], allBooths = [], allVendors = [], allVenues = [];
@@ -518,7 +527,7 @@ async function loadCityOps() {
 function populateEventFilter() {
   const sel = document.getElementById('boothEventFilter');
   if (!sel) return;
-  sel.innerHTML = '<option value="">All events</option>' + allEvents.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  sel.innerHTML = '<option value="">All events</option>' + allEvents.map(e => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)}</option>`).join('');
 }
 
 // ── RENDER OVERVIEW ──
@@ -552,8 +561,8 @@ function renderOverview() {
     const available = booths.filter(b => b.status === 'available').length;
     const safeName  = encodeURIComponent(e.name);
     return `<tr>
-      <td class="td-name">${eventMarker(e)} ${e.name}</td>
-      <td>${e.venues?.name || '—'}</td>
+      <td class="td-name">${escapeHtml(eventMarker(e))} ${escapeHtml(e.name)}</td>
+      <td>${escapeHtml(e.venues?.name || '—')}</td>
       <td class="td-mono">${booths.length} total · ${available} open</td>
       <td class="td-mono">${allBookings.filter(b => b.event_id === e.id).length}</td>
       <td>${statusBadge(e.status)}</td>
@@ -568,9 +577,9 @@ function renderOverview() {
   const btbody = document.getElementById('overviewBookingsTable');
   if (allBookings.length === 0) { btbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">No bookings yet</td></tr>`; return; }
   btbody.innerHTML = allBookings.slice(0,5).map(b => `<tr>
-    <td class="td-name">${b.contact_email || '—'}</td>
-    <td>${b.events?.name || '—'}</td>
-    <td class="td-mono">${b.booths?.booth_ref || '—'}</td>
+    <td class="td-name">${escapeHtml(b.contact_email || '—')}</td>
+    <td>${escapeHtml(b.events?.name || '—')}</td>
+    <td class="td-mono">${escapeHtml(b.booths?.booth_ref || '—')}</td>
     <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
     <td>${statusBadge(b.status)}</td>
     <td class="td-mono">${fmtDate(b.created_at)}</td>
@@ -665,8 +674,8 @@ function renderEvents() {
     const startFmt = e.start_date ? fmtDate(e.start_date) : '—';
     const safeName = encodeURIComponent(e.name);
     return `<tr>
-      <td class="td-name">${eventMarker(e)} ${e.name}</td>
-      <td>${e.venues?.name || '—'}</td>
+      <td class="td-name">${escapeHtml(eventMarker(e))} ${escapeHtml(e.name)}</td>
+      <td>${escapeHtml(e.venues?.name || '—')}</td>
       <td class="td-mono">${startFmt}</td>
       <td class="td-mono">${booths.length}</td>
       <td class="td-mono">$${revenue.toLocaleString()}</td>
@@ -685,10 +694,10 @@ function renderBooths() {
   const tbody = document.getElementById('boothsTable');
   if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No booths found.</div></div></td></tr>`; return; }
   tbody.innerHTML = filteredBooths.map(b => `<tr>
-    <td class="td-mono">${b.booth_ref}</td>
-    <td class="td-name">${b.name}</td>
-    <td>${b.events?.name || '—'}</td>
-    <td>${b.category}</td>
+    <td class="td-mono">${escapeHtml(b.booth_ref)}</td>
+    <td class="td-name">${escapeHtml(b.name)}</td>
+    <td>${escapeHtml(b.events?.name || '—')}</td>
+    <td>${escapeHtml(b.category)}</td>
     <td class="td-mono">$${Number(b.price).toLocaleString()}</td>
     <td class="td-mono">${b.width_m && b.length_m ? `${b.width_m}×${b.length_m}m` : '—'}</td>
     <td>${statusBadge(b.status)}</td>
@@ -705,15 +714,14 @@ function renderBookings() {
   const tbody = document.getElementById('bookingsTable');
   if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No bookings yet.</div></div></td></tr>`; return; }
   tbody.innerHTML = filteredBookings.map(b => `<tr>
-    <td class="td-name">${b.contact_email || '—'}</td>
-    <td>${b.business_name || '—'}</td>
-    <td>${b.events?.name || '—'}</td>
-    <td class="td-mono">${b.booths?.booth_ref || '—'} · ${b.booths?.name || ''}</td>
+    <td class="td-name">${escapeHtml(b.contact_email || '—')}</td>
+    <td>${escapeHtml(b.business_name || '—')}</td>
+    <td>${escapeHtml(b.events?.name || '—')}</td>
+    <td class="td-mono">${escapeHtml(b.booths?.booth_ref || '—')} · ${escapeHtml(b.booths?.name || '')}</td>
     <td class="td-mono">$${Number(b.total_amount).toLocaleString()}</td>
     <td>${statusBadge(b.status)}</td>
     <td class="td-mono">${fmtDate(b.created_at)}</td>
     <td><div class="action-btns">
-      ${b.status === 'confirmed' ? `<button class="action-btn action-btn-green" onclick="setBookingStatus('${b.id}','paid')">Mark Paid</button>` : ''}
       ${b.status === 'paid' ? `<button class="action-btn action-btn-green" onclick="setBookingStatus('${b.id}','checked_in')">Check In</button>` : ''}
       ${!['cancelled','refunded'].includes(b.status) ? `<button class="action-btn action-btn-red" onclick="setBookingStatus('${b.id}','cancelled')">Cancel</button>` : ''}
     </div></td>
@@ -725,9 +733,9 @@ function renderVendors() {
   const tbody = document.getElementById('vendorsTable');
   if (allVendors.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No users yet.</div></div></td></tr>`; return; }
   tbody.innerHTML = allVendors.map(v => `<tr>
-    <td class="td-name">${v.email}</td>
-    <td>${v.full_name || '—'}</td>
-    <td>${v.company || '—'}</td>
+    <td class="td-name">${escapeHtml(v.email)}</td>
+    <td>${escapeHtml(v.full_name || '—')}</td>
+    <td>${escapeHtml(v.company || '—')}</td>
     <td>${roleBadge(v.role)}</td>
     <td class="td-mono">${fmtDate(v.created_at)}</td>
     <td><div class="action-btns">
@@ -745,8 +753,8 @@ function renderVenues() {
     const eventCount = allEvents.filter(e => e.venue_id === v.id).length;
     return `<tr>
       <td class="td-mono">VM</td>
-      <td class="td-name">${v.name}</td>
-      <td>${v.location}</td>
+      <td class="td-name">${escapeHtml(v.name)}</td>
+      <td>${escapeHtml(v.location)}</td>
       <td class="td-mono">${v.size_sqft || '—'}</td>
       <td class="td-mono">${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}</td>
       <td class="td-mono">${eventCount} events</td>
@@ -764,8 +772,15 @@ async function setBoothStatus(id, status) {
 }
 
 async function setBookingStatus(id, status) {
-  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
-  if (error) { showToast('Error', error.message); return; }
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData.session?.access_token;
+  const response = await fetch(`${FUNCTIONS_URL}/update-booking-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ booking_id: id, status }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) { showToast('Error', payload.error || 'Unable to update booking'); return; }
   showToast('Updated', `Booking ${status}`);
   await loadBookings();
 }
@@ -868,12 +883,12 @@ function statusBadge(status) {
     booked: 'badge-red', maintenance: 'badge-gray',
     pending: 'badge-yellow', confirmed: 'badge-amber', paid: 'badge-green', checked_in: 'badge-green', refund_requested: 'badge-yellow', refunded: 'badge-gray', expired: 'badge-gray'
   };
-  return `<span class="badge ${map[status] || 'badge-gray'}">${formatStatus(status)}</span>`;
+  return `<span class="badge ${map[status] || 'badge-gray'}">${escapeHtml(formatStatus(status))}</span>`;
 }
 
 function roleBadge(role) {
   const map = { vendor: 'badge-gray', organizer: 'badge-amber', city_reviewer: 'badge-green', venue_admin: 'badge-green', platform_admin: 'badge-red', city_admin: 'badge-green', super_admin: 'badge-red' };
-  return `<span class="badge ${map[role] || 'badge-gray'}">${formatStatus(role)}</span>`;
+  return `<span class="badge ${map[role] || 'badge-gray'}">${escapeHtml(formatStatus(role))}</span>`;
 }
 
 function eventMarker(event) {
