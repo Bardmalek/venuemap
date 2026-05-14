@@ -55,13 +55,18 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
 .page.active{display:block;}
 
 /* STATS ROW */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px;}
 .stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
 .stat-card-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);margin-bottom:8px;}
 .stat-card-num{font-family:var(--serif);font-size:36px;font-style:italic;color:var(--ink);}
 .stat-card-num.amber{color:var(--amber);}
 .stat-card-num.green{color:var(--green);}
 .stat-card-sub{font-size:11px;color:var(--ink3);margin-top:4px;}
+.ops-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px;}
+.ops-card{border:1px solid var(--border);background:var(--bg2);border-radius:10px;padding:15px;}
+.ops-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
+.ops-value{font-size:18px;font-weight:750;color:var(--ink);}
+.ops-note{font-size:11px;color:var(--ink3);line-height:1.5;margin-top:5px;}
 
 /* TABLE */
 .table-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
@@ -127,13 +132,15 @@ tr:hover td{background:var(--bg2);}
 
 /* EMPTY STATE */
 .empty-state{text-align:center;padding:60px 20px;color:var(--ink3);}
-.empty-state-icon{font-size:40px;opacity:0.3;margin-bottom:12px;}
+.empty-state-icon{font-family:var(--mono);font-size:18px;font-weight:800;letter-spacing:2px;opacity:0.45;margin-bottom:12px;}
 .empty-state-text{font-size:13px;line-height:1.6;}
 
 /* LOADING */
 .loading{display:flex;align-items:center;justify-content:center;padding:40px;gap:10px;color:var(--ink3);font-size:12px;}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:1100px){.stats-row,.ops-grid{grid-template-columns:repeat(2,1fr);}.sidebar{width:200px;}}
+@media(max-width:760px){.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;border-right:0;border-bottom:1px solid var(--border);}.content{padding:16px;}.stats-row,.ops-grid{grid-template-columns:1fr;}.table-card{overflow-x:auto;}table{min-width:720px;}}
 </style>
 </head>
 <body>
@@ -188,7 +195,7 @@ tr:hover td{background:var(--bg2);}
     <!-- OVERVIEW PAGE -->
     <div class="page active" id="page-overview">
       <div class="page-header">
-        <div class="page-header-title">Good to see you 👋</div>
+        <div class="page-header-title">Good to see you</div>
         <div class="page-header-sub" id="overviewSub">Loading your dashboard...</div>
       </div>
 
@@ -197,6 +204,20 @@ tr:hover td{background:var(--bg2);}
         <div class="stat-card"><div class="stat-card-label">Total Booths</div><div class="stat-card-num" id="statBooths">—</div><div class="stat-card-sub">Across all events</div></div>
         <div class="stat-card"><div class="stat-card-label">Bookings</div><div class="stat-card-num green" id="statBookings">—</div><div class="stat-card-sub">All time</div></div>
         <div class="stat-card"><div class="stat-card-label">Max Revenue</div><div class="stat-card-num amber" id="statRevenue">—</div><div class="stat-card-sub">If all booths fill</div></div>
+        <div class="stat-card"><div class="stat-card-label">Platform Fees</div><div class="stat-card-num green" id="statPlatformFees">—</div><div class="stat-card-sub">7% fee visibility</div></div>
+        <div class="stat-card"><div class="stat-card-label">Review Flags</div><div class="stat-card-num" id="statReviewFlags">—</div><div class="stat-card-sub">Docs, food, permit risk</div></div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div><div class="table-title">City-Grade Operations</div><div class="table-sub">Revenue, compliance, and readiness signals for organizers</div></div>
+        </div>
+        <div class="ops-grid">
+          <div class="ops-card"><div class="ops-label">Booking Funnel</div><div class="ops-value" id="opsFunnel">—</div><div class="ops-note">Holds, pending payments, paid records.</div></div>
+          <div class="ops-card"><div class="ops-label">Document Queue</div><div class="ops-value" id="opsDocuments">—</div><div class="ops-note">Vendor applications and document reviews.</div></div>
+          <div class="ops-card"><div class="ops-label">Permit Risk</div><div class="ops-value" id="opsPermits">—</div><div class="ops-note">Food/high-risk booths needing civic attention.</div></div>
+          <div class="ops-card"><div class="ops-label">Audit Layer</div><div class="ops-value" id="opsAudit">Enabled</div><div class="ops-note">Status transitions and serious actions are logged.</div></div>
+        </div>
       </div>
 
       <div class="table-card">
@@ -387,6 +408,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null;
 let allEvents = [], allBookings = [], allBooths = [], allVendors = [], allVenues = [];
+let allApplications = [], allDocuments = [], allPermitReviews = [], allAuditLogs = [];
 let filteredEvents = [], filteredBookings = [], filteredBooths = [];
 
 // ── AUTH ──
@@ -406,7 +428,7 @@ async function signOut() {
 
 // ── LOAD ALL DATA ──
 async function loadAll() {
-  await Promise.all([loadEvents(), loadBookings(), loadBooths(), loadVendors(), loadVenues()]);
+  await Promise.all([loadEvents(), loadBookings(), loadBooths(), loadVendors(), loadVenues(), loadCityOps()]);
   renderOverview();
 }
 
@@ -447,6 +469,19 @@ async function loadVenues() {
   renderVenues();
 }
 
+async function loadCityOps() {
+  const [applications, documents, reviews, audits] = await Promise.all([
+    sb.from('event_applications').select('*').order('created_at', { ascending: false }),
+    sb.from('vendor_documents').select('*').order('created_at', { ascending: false }),
+    sb.from('permit_reviews').select('*').order('created_at', { ascending: false }),
+    sb.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
+  ]);
+  allApplications = applications.error ? [] : (applications.data || []);
+  allDocuments = documents.error ? [] : (documents.data || []);
+  allPermitReviews = reviews.error ? [] : (reviews.data || []);
+  allAuditLogs = audits.error ? [] : (audits.data || []);
+}
+
 // ── POPULATE DROPDOWNS ──
 function populateEventFilter() {
   const sel = document.getElementById('boothEventFilter');
@@ -458,21 +493,33 @@ function populateEventFilter() {
 function renderOverview() {
   const totalBooths   = allEvents.reduce((s, e) => s + (e.booths?.length || 0), 0);
   const totalRevenue  = allEvents.reduce((s, e) => s + (e.booths?.reduce((bs, b) => bs + Number(b.price), 0) || 0), 0);
+  const platformFees  = allBookings.reduce((s, b) => s + Number(b.platform_fee || 0), 0);
+  const holds         = allBookings.filter(b => ['hold','payment_started','pending'].includes(b.status)).length;
+  const pending       = allBookings.filter(b => ['payment_pending','confirmed'].includes(b.status)).length;
+  const paid          = allBookings.filter(b => ['paid','checked_in'].includes(b.status)).length;
+  const foodRisk      = allBooths.filter(b => /food|beverage/i.test(b.category || '') || ['high','critical'].includes(b.risk_level)).length;
+  const missingDocs   = allApplications.filter(a => ['submitted','organizer_review','city_review'].includes(a.status || '')).length + allDocuments.filter(d => ['submitted'].includes(d.status || '')).length;
 
   document.getElementById('statEvents').textContent   = allEvents.length;
   document.getElementById('statBooths').textContent   = totalBooths;
   document.getElementById('statBookings').textContent = allBookings.length;
   document.getElementById('statRevenue').textContent  = totalRevenue >= 1000 ? `$${(totalRevenue/1000).toFixed(1)}k` : `$${totalRevenue}`;
+  document.getElementById('statPlatformFees').textContent = platformFees >= 1000 ? `$${(platformFees/1000).toFixed(1)}k` : `$${platformFees}`;
+  document.getElementById('statReviewFlags').textContent  = foodRisk + missingDocs;
+  document.getElementById('opsFunnel').textContent = `${holds} hold · ${pending} pending · ${paid} paid`;
+  document.getElementById('opsDocuments').textContent = `${allDocuments.length} docs · ${allApplications.length} apps`;
+  document.getElementById('opsPermits').textContent = `${foodRisk} risk flags`;
+  document.getElementById('opsAudit').textContent = allAuditLogs.length ? `${allAuditLogs.length} recent logs` : 'Enabled';
 
   // Recent events
   const tbody = document.getElementById('overviewEventsTable');
-  if (allEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-text">No events yet. <a href="venue_map_editor.html" style="color:var(--amber)">Create one →</a></div></div></td></tr>`; return; }
+  if (allEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No events yet. <a href="venue_map_editor.html" style="color:var(--amber)">Create one →</a></div></div></td></tr>`; return; }
   tbody.innerHTML = allEvents.slice(0,5).map(e => {
     const booths    = e.booths || [];
     const available = booths.filter(b => b.status === 'available').length;
     const safeName  = encodeURIComponent(e.name);
     return `<tr>
-      <td class="td-name">${e.banner_emoji || '🎪'} ${e.name}</td>
+      <td class="td-name">${eventMarker(e)} ${e.name}</td>
       <td>${e.venues?.name || '—'}</td>
       <td class="td-mono">${booths.length} total · ${available} open</td>
       <td class="td-mono">${allBookings.filter(b => b.event_id === e.id).length}</td>
@@ -500,14 +547,14 @@ function renderOverview() {
 // ── RENDER EVENTS ──
 function renderEvents() {
   const tbody = document.getElementById('eventsTable');
-  if (filteredEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-text">No events found.</div></div></td></tr>`; return; }
+  if (filteredEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No events found.</div></div></td></tr>`; return; }
   tbody.innerHTML = filteredEvents.map(e => {
     const booths   = e.booths || [];
     const revenue  = booths.reduce((s, b) => s + Number(b.price), 0);
     const startFmt = e.start_date ? fmtDate(e.start_date) : '—';
     const safeName = encodeURIComponent(e.name);
     return `<tr>
-      <td class="td-name">${e.banner_emoji || '🎪'} ${e.name}</td>
+      <td class="td-name">${eventMarker(e)} ${e.name}</td>
       <td>${e.venues?.name || '—'}</td>
       <td class="td-mono">${startFmt}</td>
       <td class="td-mono">${booths.length}</td>
@@ -525,7 +572,7 @@ function renderEvents() {
 // ── RENDER BOOTHS ──
 function renderBooths() {
   const tbody = document.getElementById('boothsTable');
-  if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🏪</div><div class="empty-state-text">No booths found.</div></div></td></tr>`; return; }
+  if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No booths found.</div></div></td></tr>`; return; }
   tbody.innerHTML = filteredBooths.map(b => `<tr>
     <td class="td-mono">${b.booth_ref}</td>
     <td class="td-name">${b.name}</td>
@@ -545,7 +592,7 @@ function renderBooths() {
 // ── RENDER BOOKINGS ──
 function renderBookings() {
   const tbody = document.getElementById('bookingsTable');
-  if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No bookings yet.</div></div></td></tr>`; return; }
+  if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No bookings yet.</div></div></td></tr>`; return; }
   tbody.innerHTML = filteredBookings.map(b => `<tr>
     <td class="td-name">${b.contact_email || '—'}</td>
     <td>${b.business_name || '—'}</td>
@@ -565,7 +612,7 @@ function renderBookings() {
 // ── RENDER VENDORS ──
 function renderVendors() {
   const tbody = document.getElementById('vendorsTable');
-  if (allVendors.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">No users yet.</div></div></td></tr>`; return; }
+  if (allVendors.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No users yet.</div></div></td></tr>`; return; }
   tbody.innerHTML = allVendors.map(v => `<tr>
     <td class="td-name">${v.email}</td>
     <td>${v.full_name || '—'}</td>
@@ -586,7 +633,7 @@ function renderVenues() {
   tbody.innerHTML = allVenues.map(v => {
     const eventCount = allEvents.filter(e => e.venue_id === v.id).length;
     return `<tr>
-      <td style="font-size:20px;">${v.icon}</td>
+      <td class="td-mono">VM</td>
       <td class="td-name">${v.name}</td>
       <td>${v.location}</td>
       <td class="td-mono">${v.size_sqft || '—'}</td>
@@ -599,31 +646,31 @@ function renderVenues() {
 // ── ACTIONS ──
 async function setBoothStatus(id, status) {
   const { error } = await sb.from('booths').update({ status }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `Booth set to ${status}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `Booth set to ${status}`);
   await loadBooths();
   renderOverview();
 }
 
 async function setBookingStatus(id, status) {
   const { error } = await sb.from('bookings').update({ status }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `Booking ${status}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `Booking ${status}`);
   await loadBookings();
 }
 
 async function setUserRole(id, role) {
   const { error } = await sb.from('profiles').update({ role }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `User role updated to ${role}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `User role updated to ${role}`);
   await loadVendors();
 }
 
 async function toggleEventStatus(id, currentStatus) {
   const newStatus = currentStatus === 'published' ? 'draft' : 'published';
   const { error } = await sb.from('events').update({ status: newStatus }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `Event ${newStatus}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `Event ${newStatus}`);
   await loadEvents();
   renderOverview();
 }
@@ -631,8 +678,8 @@ async function toggleEventStatus(id, currentStatus) {
 async function deleteEvent(id, name) {
   if (!confirm(`Delete "${name}" and all its booths? This cannot be undone.`)) return;
   const { error } = await sb.from('events').delete().eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('🗑', `"${name}" deleted`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Deleted', `"${name}" deleted`);
   await loadEvents();
   renderOverview();
 }
@@ -661,8 +708,8 @@ async function saveEvent() {
     expected_attendance: document.getElementById('editEventAttendance').value ? parseInt(document.getElementById('editEventAttendance').value) : null,
   };
   const { error } = await sb.from('events').update(updates).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', 'Event updated');
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', 'Event updated');
   closeModal('editEventModal');
   await loadEvents();
   renderOverview();
@@ -706,15 +753,25 @@ function filterBookingsByStatus(status) {
 function statusBadge(status) {
   const map = {
     published: 'badge-green', draft: 'badge-gray', cancelled: 'badge-red', completed: 'badge-amber',
-    available: 'badge-green', reserved: 'badge-yellow', booked: 'badge-red', maintenance: 'badge-gray',
-    pending: 'badge-yellow', confirmed: 'badge-amber', paid: 'badge-green', checked_in: 'badge-green', refunded: 'badge-gray'
+    available: 'badge-green', hold: 'badge-yellow', reserved: 'badge-yellow', payment_started: 'badge-yellow', payment_pending: 'badge-red',
+    booked: 'badge-red', maintenance: 'badge-gray',
+    pending: 'badge-yellow', confirmed: 'badge-amber', paid: 'badge-green', checked_in: 'badge-green', refunded: 'badge-gray', expired: 'badge-gray'
   };
-  return `<span class="badge ${map[status] || 'badge-gray'}">${status}</span>`;
+  return `<span class="badge ${map[status] || 'badge-gray'}">${formatStatus(status)}</span>`;
 }
 
 function roleBadge(role) {
-  const map = { vendor: 'badge-gray', organizer: 'badge-amber', city_admin: 'badge-green', super_admin: 'badge-red' };
-  return `<span class="badge ${map[role] || 'badge-gray'}">${role}</span>`;
+  const map = { vendor: 'badge-gray', organizer: 'badge-amber', city_reviewer: 'badge-green', venue_admin: 'badge-green', platform_admin: 'badge-red', city_admin: 'badge-green', super_admin: 'badge-red' };
+  return `<span class="badge ${map[role] || 'badge-gray'}">${formatStatus(role)}</span>`;
+}
+
+function eventMarker(event) {
+  const marker = String(event.banner_emoji || 'VM').trim();
+  return /[\u{1F300}-\u{1FAFF}]/u.test(marker) ? 'VM' : marker.slice(0, 4);
+}
+
+function formatStatus(status) {
+  return String(status || 'unknown').replaceAll('_', ' ');
 }
 
 function fmtDate(d) {

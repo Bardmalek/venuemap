@@ -128,6 +128,7 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; a
 .step-num { font-family: var(--serif); font-size: 52px; color: var(--border2); line-height: 1; margin-bottom: 14px; transition: color 0.2s; }
 .step:hover .step-num { color: var(--amber-border); }
 .step-icon { font-size: 26px; margin-bottom: 10px; }
+.step-icon svg,.for-icon svg { width: 28px; height: 28px; stroke: var(--amber); }
 .step-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
 .step-desc { font-size: 13px; color: var(--ink2); line-height: 1.65; }
 
@@ -146,8 +147,8 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; a
 .ev3 { background: linear-gradient(135deg, #00081a 0%, #001a3d 50%, #000508 100%); }
 .ev4 { background: linear-gradient(135deg, #1a000d 0%, #3d0019 50%, #0d0005 100%); }
 .ev5 { background: linear-gradient(135deg, #1a1000 0%, #3d2800 50%, #0d0800 100%); }
-.event-emoji { font-size: 52px; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.3)); animation: floatSlow 4s ease-in-out infinite; }
-.event-card:not(.featured) .event-emoji { font-size: 34px; }
+.event-symbol { width: 54px; height: 54px; border: 1px solid rgba(255,255,255,0.28); border-radius: 14px; color: rgba(255,255,255,0.82); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 800; letter-spacing: 1px; background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); animation: floatSlow 4s ease-in-out infinite; }
+.event-card:not(.featured) .event-symbol { width: 40px; height: 40px; font-size: 11px; }
 @keyframes floatSlow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 .event-badge-hot { position: absolute; top: 12px; left: 12px; background: var(--amber); color: var(--white); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; }
 .event-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
@@ -175,7 +176,7 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; a
 .for-card.city::before { background: linear-gradient(90deg, #1a3d6b, #2d6b9b); }
 .for-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
 .for-card:hover::before { opacity: 1; }
-.for-icon { font-size: 32px; margin-bottom: 14px; }
+.for-icon { margin-bottom: 14px; width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg2); }
 .for-who { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
 .for-title { font-family: var(--serif); font-size: 22px; color: var(--ink); margin-bottom: 10px; line-height: 1.2; }
 .for-desc { font-size: 13px; color: var(--ink2); line-height: 1.75; margin-bottom: 18px; }
@@ -212,6 +213,32 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
 .footer-bottom { display: flex; justify-content: space-between; align-items: center; }
 .footer-copy, .footer-made { font-size: 11px; color: rgba(255,255,255,0.22); }
 
+/* CITY-GRADE PROOF */
+.proof-band { padding: 36px 48px; background: var(--white); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.proof-band-inner { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.proof-metric { background: var(--white); padding: 28px; }
+.proof-metric-num { font-family: var(--serif); font-size: 44px; line-height: 1; color: var(--ink); }
+.proof-metric-num em { color: var(--amber); font-style: normal; }
+.proof-metric-label { margin-top: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink3); }
+.proof-metric-sub { margin-top: 5px; font-size: 12px; color: var(--ink2); line-height: 1.5; }
+.case-study { background: var(--ink); color: var(--white); padding: 100px 48px; }
+.case-grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 56px; align-items: start; }
+.case-kicker { font-family: var(--mono); color: var(--amber-light); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.case-title { font-family: var(--serif); font-size: clamp(38px,4vw,62px); line-height: 1.05; margin-bottom: 18px; }
+.case-copy { color: rgba(255,255,255,0.58); font-size: 15px; line-height: 1.8; max-width: 480px; }
+.workflow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.workflow-card { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.035); border-radius: 16px; padding: 22px; }
+.workflow-label { font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 12px; }
+.workflow-card strong { display: block; font-size: 15px; margin-bottom: 8px; color: var(--white); }
+.workflow-card p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+.city-os { padding: 100px 48px; background: var(--bg); }
+.city-os-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 44px; }
+.city-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 28px; min-height: 230px; }
+.city-card-top { width: 38px; height: 38px; border-radius: 10px; background: var(--amber-bg); border: 1px solid var(--amber-border); color: var(--amber); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+.city-card-top svg { width: 20px; height: 20px; }
+.city-card-title { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+.city-card-copy { color: var(--ink2); font-size: 13px; line-height: 1.75; }
+
 /* ANIMATIONS */
 @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 .reveal { opacity:0; transform:translateY(28px); transition:opacity 0.65s ease, transform 0.65s ease; }
@@ -219,81 +246,6 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
 .reveal-delay-1 { transition-delay: 0.1s; }
 .reveal-delay-2 { transition-delay: 0.2s; }
 .reveal-delay-3 { transition-delay: 0.3s; }
-
-/* ── MOBILE ── */
-@media (max-width: 768px) {
-  /* Hide custom cursor on mobile */
-  #cursor { display: none; }
-  *, a, button { cursor: auto !important; }
-
-  /* Nav */
-  nav { padding: 0 20px; height: 54px; }
-  .nav-center { display: none; }
-  .nav-right { gap: 8px; }
-  .btn-sm { padding: 6px 12px; font-size: 11px; }
-  .logo { font-size: 15px; }
-
-  /* Hero */
-  .hero { padding: 80px 20px 40px; grid-template-columns: 1fr !important; gap: 40px; min-height: auto; }
-  .hero-left { max-width: 100%; }
-  .hero-h1 { font-size: clamp(36px, 10vw, 52px); }
-  .hero-p { font-size: 14px; }
-  .hero-actions { flex-direction: column; gap: 10px; }
-  .btn-hero { width: 100%; text-align: center; justify-content: center; padding: 14px 20px; }
-  .hero-proof { gap: 20px; flex-wrap: wrap; }
-  .hero-right { width: 100%; }
-  .featured-card { width: 100%; }
-  .hero-float-badge { display: none; }
-  .hero-grid { display: none; }
-
-  /* Featured card */
-  .fc-title { font-size: 28px; }
-  .fc-map { height: 140px !important; }
-
-  /* Ticker */
-  .ticker { display: none; }
-
-  /* Sections */
-  .section { padding: 60px 20px; }
-  .section-h2 { font-size: clamp(28px, 7vw, 42px); }
-
-  /* Steps */
-  .steps { grid-template-columns: 1fr !important; gap: 16px; }
-  .step { padding: 20px; }
-
-  /* Events */
-  .events-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .events-grid { grid-template-columns: 1fr !important; }
-  .event-card { flex-direction: column !important; }
-  .event-card.featured { grid-column: span 1 !important; }
-  .event-visual { height: 160px !important; width: 100% !important; }
-  .event-details { display: none; }
-
-  /* For cards */
-  .for-cards { grid-template-columns: 1fr !important; gap: 16px; }
-
-  /* Stat band */
-  .stat-band-inner { grid-template-columns: 1fr 1fr !important; }
-  .sbi-num { font-size: 38px; }
-
-  /* CTA */
-  .cta-section { padding: 60px 20px; }
-  .cta-actions { flex-direction: column; align-items: center; gap: 10px; }
-  .btn-hero { max-width: 320px; }
-
-  /* Footer */
-  footer { padding: 40px 20px 28px; }
-  .footer-top { grid-template-columns: 1fr 1fr !important; gap: 28px; }
-  .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
-}
-
-@media (max-width: 480px) {
-  .hero-h1 { font-size: 32px; }
-  .footer-top { grid-template-columns: 1fr !important; }
-  .stat-band-inner { grid-template-columns: 1fr !important; }
-  .hero-proof { gap: 16px; }
-  .proof-num { font-size: 28px; }
-}
 </style>
 </head>
 <body>
@@ -357,10 +309,93 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
               30,000+ expected attendees
             </div>
           </div>
-          <div class="fc-map" style="position:relative;overflow:hidden;border-radius:10px;height:168px;padding:0;">
-            <img src="https://www.image2url.com/r2/default/images/1776915529516-124df5d1-121d-43e7-a0f7-2d8c7fa337af.png"
-                 style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
-            <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:rgba(255,255,255,0.75);font-size:7.5px;padding:2px 10px;border-radius:100px;white-space:nowrap;font-family:var(--mono);letter-spacing:0.5px;">Lafarge Lake Park · Coquitlam</div>
+          <div class="fc-map" style="position:relative;overflow:hidden;border-radius:10px;height:168px;padding:0;background:#1e2a1e;">
+            <!-- Exact Tiregan background image -->
+            <img src="https://image2url.com/r2/default/images/1772232052982-9762ec3e-f714-4c4c-97e6-34483237440a.png"
+                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;">
+            <!-- Booths overlay matching tiregan.html exact coordinates -->
+            <div style="position:absolute;inset:0;">
+              <!-- FK Kebab red -->
+              <div class="mini-booth" style="position:absolute;left:27.6%;top:23.5%;width:5.9%;height:2.9%;background:rgba(221,91,68,0.75);border:1px solid rgb(221,91,68);transform:rotate(-13.53deg);color:#fff;font-size:4px;border-radius:1px;display:flex;align-items:center;justify-content:center;">FK1</div>
+              <div class="mini-booth" style="position:absolute;left:24.7%;top:14.3%;width:5.8%;height:2.7%;background:rgba(221,91,68,0.75);border:1px solid rgb(221,91,68);transform:rotate(-10.79deg);color:#fff;font-size:4px;border-radius:1px;display:flex;align-items:center;justify-content:center;">FK2</div>
+              <!-- FT Food Trucks red -->
+              <div class="mini-booth" style="position:absolute;left:58.7%;top:16.8%;width:5%;height:3%;background:rgba(221,91,68,0.75);border:1px solid rgb(221,91,68);transform:rotate(-19.24deg);color:#fff;font-size:4px;border-radius:1px;display:flex;align-items:center;justify-content:center;">FT1</div>
+              <div class="mini-booth" style="position:absolute;left:56.1%;top:7.9%;width:5%;height:3%;background:rgba(221,91,68,0.75);border:1px solid rgb(221,91,68);transform:rotate(-18.3deg);color:#fff;font-size:4px;border-radius:1px;display:flex;align-items:center;justify-content:center;">FT2</div>
+              <!-- Food booths top row red -->
+              <div class="mini-booth" style="position:absolute;left:33.3%;top:22.9%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F1</div>
+              <div class="mini-booth" style="position:absolute;left:36.4%;top:22.2%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F2</div>
+              <div class="mini-booth" style="position:absolute;left:39.6%;top:21.6%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F3</div>
+              <div class="mini-booth" style="position:absolute;left:42.7%;top:20.9%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F4</div>
+              <div class="mini-booth" style="position:absolute;left:45.8%;top:20.2%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F5</div>
+              <div class="mini-booth" style="position:absolute;left:49%;top:19.6%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F6</div>
+              <div class="mini-booth" style="position:absolute;left:52.1%;top:18.9%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F7</div>
+              <div class="mini-booth" style="position:absolute;left:55.2%;top:18.3%;width:3.4%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-15.88deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F8</div>
+              <!-- Food booths bottom row -->
+              <div class="mini-booth" style="position:absolute;left:52.6%;top:9.3%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F9</div>
+              <div class="mini-booth" style="position:absolute;left:49.5%;top:9.9%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F10</div>
+              <div class="mini-booth" style="position:absolute;left:46.3%;top:10.5%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F11</div>
+              <div class="mini-booth" style="position:absolute;left:43.2%;top:11.1%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F12</div>
+              <div class="mini-booth" style="position:absolute;left:40%;top:11.8%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F13</div>
+              <div class="mini-booth" style="position:absolute;left:36.9%;top:12.4%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F14</div>
+              <div class="mini-booth" style="position:absolute;left:33.7%;top:13%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F15</div>
+              <div class="mini-booth" style="position:absolute;left:30.6%;top:13.7%;width:3.3%;height:2.5%;background:rgba(221,91,68,0.7);border:1px solid rgb(221,91,68);transform:rotate(-14.94deg);color:#fff;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">F16</div>
+              <!-- Handicraft tables yellow -->
+              <div class="mini-booth" style="position:absolute;left:12.5%;top:37.1%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:14.1%;top:36.9%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:15.8%;top:36.6%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:17.4%;top:36.4%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:19.1%;top:36.2%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:20.7%;top:35.9%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:13.8%;top:38.7%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:15.5%;top:38.5%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:17.1%;top:38.3%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:18.8%;top:38.0%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <div class="mini-booth" style="position:absolute;left:20.4%;top:37.8%;width:1.6%;height:0.7%;background:rgba(234,207,54,0.9);border:1px solid rgb(234,207,54);transform:rotate(-10.72deg);border-radius:1px;"></div>
+              <!-- E1 E2 VIP blue -->
+              <div class="mini-booth" style="position:absolute;left:15%;top:32.8%;width:1.6%;height:3.9%;background:rgba(112,146,190,0.85);border:1.5px solid rgb(112,146,190);transform:rotate(-10.72deg);color:#fff;font-size:4px;border-radius:1px;display:flex;align-items:center;justify-content:center;">E1</div>
+              <div class="mini-booth" style="position:absolute;left:17.1%;top:32.5%;width:1.6%;height:3.9%;background:rgba(112,146,190,0.85);border:1.5px solid rgb(112,146,190);transform:rotate(-10.72deg);color:#fff;font-size:4px;border-radius:1px;display:flex;align-items:center;justify-content:center;">E2</div>
+              <!-- Regular booths white - diagonal right cluster -->
+              <div class="mini-booth" style="position:absolute;left:67.8%;top:47.4%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">1</div>
+              <div class="mini-booth" style="position:absolute;left:65.9%;top:49.2%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">2</div>
+              <div class="mini-booth" style="position:absolute;left:64.1%;top:51%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">3</div>
+              <div class="mini-booth" style="position:absolute;left:62.3%;top:52.8%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">4</div>
+              <div class="mini-booth" style="position:absolute;left:60.5%;top:54.6%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">5</div>
+              <div class="mini-booth" style="position:absolute;left:58.7%;top:56.4%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">6</div>
+              <div class="mini-booth" style="position:absolute;left:56.9%;top:58.2%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">7</div>
+              <div class="mini-booth" style="position:absolute;left:55.1%;top:59.9%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">8</div>
+              <div class="mini-booth" style="position:absolute;left:53.4%;top:61.8%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">9</div>
+              <div class="mini-booth" style="position:absolute;left:51.6%;top:63.6%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">10</div>
+              <!-- Second diagonal col -->
+              <div class="mini-booth" style="position:absolute;left:62.7%;top:44.5%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">11</div>
+              <div class="mini-booth" style="position:absolute;left:60.9%;top:46.3%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">12</div>
+              <div class="mini-booth" style="position:absolute;left:59.1%;top:48.1%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">13</div>
+              <div class="mini-booth" style="position:absolute;left:57.3%;top:49.9%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">14</div>
+              <div class="mini-booth" style="position:absolute;left:55.5%;top:51.7%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">15</div>
+              <div class="mini-booth" style="position:absolute;left:53.7%;top:53.5%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">16</div>
+              <div class="mini-booth" style="position:absolute;left:51.9%;top:55.3%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">17</div>
+              <div class="mini-booth" style="position:absolute;left:50.1%;top:57.1%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">18</div>
+              <div class="mini-booth" style="position:absolute;left:48.3%;top:58.9%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">19</div>
+              <div class="mini-booth" style="position:absolute;left:46.5%;top:60.7%;width:3.4%;height:2.5%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(36.69deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">20</div>
+              <!-- Curved bottom row -->
+              <div class="mini-booth" style="position:absolute;left:42.5%;top:62%;width:3%;height:2.3%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(17.02deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">21</div>
+              <div class="mini-booth" style="position:absolute;left:39.9%;top:61.4%;width:3%;height:2.3%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(17.02deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">22</div>
+              <div class="mini-booth" style="position:absolute;left:37.3%;top:60.8%;width:3%;height:2.3%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(17.02deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">23</div>
+              <div class="mini-booth" style="position:absolute;left:34.7%;top:60.2%;width:3%;height:2.3%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(17.02deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">24</div>
+              <div class="mini-booth" style="position:absolute;left:32%;top:59.6%;width:3%;height:2.3%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(17.02deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">25</div>
+              <div class="mini-booth" style="position:absolute;left:29.4%;top:59%;width:3%;height:2.3%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(17.02deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">26</div>
+              <div class="mini-booth" style="position:absolute;left:26.8%;top:58.4%;width:3%;height:2.3%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);transform:rotate(17.02deg);color:#111;font-size:3.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;">27</div>
+              <!-- Vertical left column -->
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:54.7%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">28</div>
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:52.2%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">29</div>
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:48.5%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">30</div>
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:45.8%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">31</div>
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:42.5%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">32</div>
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:39.9%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">33</div>
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:35.4%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">34</div>
+              <div class="mini-booth" style="position:absolute;left:25.1%;top:33%;width:2.5%;height:1.8%;background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);color:#111;font-size:3px;border-radius:1px;display:flex;align-items:center;justify-content:center;">35</div>
+              <!-- label -->
+              <div style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:rgba(255,255,255,0.65);font-size:7.5px;padding:2px 9px;border-radius:100px;white-space:nowrap;font-family:var(--mono);letter-spacing:0.5px;">Lafarge Lake Park · Floor Plan</div>
+            </div>
           </div>
           <div class="fc-progress-top">
             <span class="fc-progress-label">Booths filling up</span>
@@ -401,6 +436,16 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
   </div>
 </div>
 
+<!-- OPERATING PROOF -->
+<section class="proof-band">
+  <div class="proof-band-inner reveal">
+    <div class="proof-metric"><div class="proof-metric-num"><em>$</em>75.6k</div><div class="proof-metric-label">Live GMV potential</div><div class="proof-metric-sub">Tiregan 2026 booth inventory now booking through VenueMap.</div></div>
+    <div class="proof-metric"><div class="proof-metric-num">89</div><div class="proof-metric-label">Booths mapped</div><div class="proof-metric-sub">Real venue inventory drawn onto a public floor plan.</div></div>
+    <div class="proof-metric"><div class="proof-metric-num">7<em>%</em></div><div class="proof-metric-label">Platform fee</div><div class="proof-metric-sub">Transaction-based economics aligned with organizer success.</div></div>
+    <div class="proof-metric"><div class="proof-metric-num">2</div><div class="proof-metric-label">TCICS events</div><div class="proof-metric-sub">First anchor customer has already run real inventory through the system.</div></div>
+  </div>
+</section>
+
 <!-- HOW IT WORKS -->
 <section class="section" id="how">
   <div class="reveal">
@@ -409,10 +454,10 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
     <p class="section-p">No spreadsheets, no back-and-forth emails, no chasing permits. Just pick, pay, and show up.</p>
   </div>
   <div class="steps reveal">
-    <div class="step"><div class="step-num">01</div><div class="step-icon">🗺️</div><div class="step-title">Find your event</div><div class="step-desc">Browse upcoming festivals, markets, and cultural events across Metro Vancouver filtered by date, location, and booth type.</div></div>
-    <div class="step"><div class="step-num">02</div><div class="step-icon">📍</div><div class="step-title">Pick your spot</div><div class="step-desc">View the real venue floor plan on satellite imagery. Click any available booth to see its exact size, price, and amenities.</div></div>
-    <div class="step"><div class="step-num">03</div><div class="step-icon">✍️</div><div class="step-title">Apply & pay</div><div class="step-desc">Fill in your business details, upload required documents, sign your contract digitally, and pay securely via Stripe.</div></div>
-    <div class="step"><div class="step-num">04</div><div class="step-icon">✅</div><div class="step-title">Show up & sell</div><div class="step-desc">Receive your QR code confirmation. Scan in on event day and you're ready. Permits handled automatically.</div></div>
+    <div class="step"><div class="step-num">01</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z"/><path d="M9 3v15M15 6v15"/></svg></div><div class="step-title">Find your event</div><div class="step-desc">Browse upcoming festivals, markets, and cultural events across Metro Vancouver filtered by date, location, and booth type.</div></div>
+    <div class="step"><div class="step-num">02</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div class="step-title">Pick your spot</div><div class="step-desc">View the real venue floor plan on satellite imagery. Click any available booth to see its exact size, price, and amenities.</div></div>
+    <div class="step"><div class="step-num">03</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5M15 17l4-4"/></svg></div><div class="step-title">Apply & pay</div><div class="step-desc">Submit business details, documents, and a server-verified booking hold. Generic PayPal capture is staged as the next payment pass.</div></div>
+    <div class="step"><div class="step-num">04</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/><path d="M3 21h18"/></svg></div><div class="step-title">Show up & sell</div><div class="step-desc">Receive a vendor package with receipt, permit state, and event-day credentials once payment and review are complete.</div></div>
   </div>
 </section>
 
@@ -435,6 +480,23 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
   </div>
 </section>
 
+<!-- TCICS CASE STUDY -->
+<section class="case-study">
+  <div class="case-grid">
+    <div>
+      <div class="case-kicker">Anchor customer proof</div>
+      <h2 class="case-title">TCICS moved from paper coordination to live booth commerce.</h2>
+      <p class="case-copy">The Tri-City Iranian Cultural Society is using VenueMap to manage real cultural event inventory: live booth selection, verified holds, payment-ready booking records, receipts, dashboards, and operational visibility.</p>
+    </div>
+    <div class="workflow-grid">
+      <div class="workflow-card"><div class="workflow-label">Before VenueMap</div><strong>Spreadsheet inventory</strong><p>Manual booth lists, payment screenshots, email threads, and no reliable way to prevent overlapping claims.</p></div>
+      <div class="workflow-card"><div class="workflow-label">After VenueMap</div><strong>Map-first commerce</strong><p>Vendors choose the exact location, inventory updates in real time, and every serious action becomes auditable.</p></div>
+      <div class="workflow-card"><div class="workflow-label">Organizer value</div><strong>Less admin drag</strong><p>Booth revenue, vendor details, documents, and booking states flow into one operational dashboard.</p></div>
+      <div class="workflow-card"><div class="workflow-label">City value</div><strong>Review-ready records</strong><p>Vendor passports, permits, insurance, and status history create a path toward municipal licensing.</p></div>
+    </div>
+  </div>
+</section>
+
 <!-- FOR WHO -->
 <section class="section">
   <div class="reveal">
@@ -443,7 +505,7 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
   </div>
   <div class="for-grid">
     <div class="for-card vendors reveal">
-      <div class="for-icon">🛒</div>
+      <div class="for-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6h15l-2 8H8L6 3H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></div>
       <div class="for-who">For vendors</div>
       <div class="for-title">Find your audience, book your space.</div>
       <div class="for-desc">Stop scrambling for spots through Facebook groups and cold calls. See every available booth in Metro Vancouver in one place.</div>
@@ -455,7 +517,7 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
       </div>
     </div>
     <div class="for-card organizers reveal reveal-delay-1">
-      <div class="for-icon">🗓️</div>
+      <div class="for-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></div>
       <div class="for-who">For organizers</div>
       <div class="for-title">Design, publish, and fill your event.</div>
       <div class="for-desc">Draw your venue layout on a real satellite map. Set prices, publish your event, and watch bookings come in without a single spreadsheet.</div>
@@ -467,7 +529,7 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
       </div>
     </div>
     <div class="for-card city reveal reveal-delay-2">
-      <div class="for-icon">🏛️</div>
+      <div class="for-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10h18M5 10v10M9 10v10M15 10v10M19 10v10M4 20h16M12 3l8 5H4l8-5z"/></svg></div>
       <div class="for-who">For the city</div>
       <div class="for-title">Automate permits. Modernize events.</div>
       <div class="for-desc">Replace manual permit applications with automatic submissions. Every food vendor, fire safety check, and zoning approval flows through one system.</div>
@@ -478,6 +540,20 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
         <div class="for-feature">Full audit trail for every event</div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- CITY OPERATING SYSTEM -->
+<section class="city-os">
+  <div class="reveal">
+    <div class="section-tag">City platform standards</div>
+    <h2 class="section-h2">A compliance layer for the physical event economy.</h2>
+    <p class="section-p">VenueMap is being structured so organizers, cities, and venues can trust the record: who booked what, what they paid, which documents were reviewed, and who approved every step.</p>
+  </div>
+  <div class="city-os-grid reveal">
+    <div class="city-card"><div class="city-card-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.4 8.5-8 9-4.6-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-5"/></svg></div><div class="city-card-title">Audit trail by default</div><div class="city-card-copy">Every publish, booking, document review, booth status change, cancellation, and refund path is designed to create a durable record.</div></div>
+    <div class="city-card"><div class="city-card-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><div class="city-card-title">Vendor passport</div><div class="city-card-copy">Reusable vendor profiles, permits, insurance, licenses, and application history can travel across events instead of being recollected by email.</div></div>
+    <div class="city-card"><div class="city-card-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M7 7v13M17 7v13M9 4h6l2 3H7l2-3z"/><path d="M9 12h6"/></svg></div><div class="city-card-title">Permit review console</div><div class="city-card-copy">Food, fire, insurance, and venue review states become filterable operational queues for organizers and municipal reviewers.</div></div>
   </div>
 </section>
 
@@ -512,7 +588,7 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
   </div>
   <div class="footer-bottom">
     <div class="footer-copy">© 2026 VenueMap Inc. All rights reserved.</div>
-    <div class="footer-made">Made in Vancouver 🍁</div>
+    <div class="footer-made">Made in Vancouver</div>
   </div>
 </footer>
 
@@ -580,7 +656,7 @@ async function loadEvents() {
   if (error || !events || events.length === 0) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink3);">
-        <div style="font-size:48px;margin-bottom:16px;opacity:0.3;">🏪</div>
+        <div style="font-family:var(--mono);font-size:28px;margin-bottom:16px;opacity:0.35;">VM</div>
         <div style="font-size:15px;font-weight:600;color:var(--ink2);margin-bottom:8px;">No events published yet</div>
         <div style="font-size:13px;">Use the <a href="venue_map_editor.html" style="color:var(--amber);text-decoration:none;font-weight:600;">Venue Editor</a> to create and publish your first event.</div>
       </div>`;
@@ -596,14 +672,14 @@ async function loadEvents() {
     const isFeatured = i === 0;
     const spotsLow  = available > 0 && available <= 10;
     const startFmt  = ev.start_date ? new Date(ev.start_date).toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric', year:'numeric' }) : null;
-    const coverImg  = isTiregan ? `<img src="https://www.image2url.com/r2/default/images/1776915529516-124df5d1-121d-43e7-a0f7-2d8c7fa337af.png" style="width:100%;height:100%;object-fit:cover;display:block;">` : `<div class="event-emoji">${ev.banner_emoji || '🎪'}</div>`;
+    const coverImg  = isTiregan ? `<img src="https://www.image2url.com/r2/default/images/1776915529516-124df5d1-121d-43e7-a0f7-2d8c7fa337af.png" style="width:100%;height:100%;object-fit:cover;display:block;">` : `<div class="event-symbol">VM</div>`;
     const spotsText = isTiregan ? 'Book Now →' : (available === 0 ? 'Sold out' : available + ' spots left');
 
     return `
       <div class="event-card ${isFeatured ? 'featured' : ''} reveal ${i > 0 ? 'reveal-delay-' + Math.min(i,3) : ''}"
            onclick="openEventPage('${ev.id}', '${ev.name.replace(/'/g, "\\'")}')" style="cursor:pointer;">
         <div class="event-visual ${bgClass}" style="${isTiregan ? 'padding:0;' : ''}">
-          ${isFeatured && available < 15 && !isTiregan ? `<div class="event-badge-hot">🔥 Selling fast</div>` : ''}
+          ${isFeatured && available < 15 && !isTiregan ? `<div class="event-badge-hot">Selling fast</div>` : ''}
           ${coverImg}
         </div>
         <div class="event-body">
@@ -611,10 +687,10 @@ async function loadEvents() {
           <div class="event-title">${ev.name}</div>
           ${isFeatured ? `
             <div class="event-details">
-              ${startFmt ? `<div class="event-detail">📅 ${startFmt}</div>` : ''}
-              ${ev.venues?.location ? `<div class="event-detail">📍 ${ev.venues.location}</div>` : ''}
-              ${ev.expected_attendance ? `<div class="event-detail">👥 ${ev.expected_attendance.toLocaleString()}+ expected</div>` : ''}
-              ${!isTiregan ? `<div class="event-detail">🏪 ${booths.length} booths</div>` : ''}
+              ${startFmt ? `<div class="event-detail">Date · ${startFmt}</div>` : ''}
+              ${ev.venues?.location ? `<div class="event-detail">Venue · ${ev.venues.location}</div>` : ''}
+              ${ev.expected_attendance ? `<div class="event-detail">Attendance · ${ev.expected_attendance.toLocaleString()}+ expected</div>` : ''}
+              ${!isTiregan ? `<div class="event-detail">Inventory · ${booths.length} booths</div>` : ''}
             </div>` : ''}
           <div class="event-footer">
             <div>
@@ -639,9 +715,6 @@ async function loadEvents() {
 
 // ── UPDATE HERO CARD ──
 function updateHeroCard(ev) {
-  // Tiregan hero card is hardcoded — don't overwrite it
-  if (ev.name.toLowerCase().includes('tiregan')) return;
-
   const booths    = ev.booths || [];
   const available = booths.filter(b => b.status === 'available').length;
   const total     = booths.length;

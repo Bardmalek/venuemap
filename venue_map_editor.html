@@ -234,6 +234,20 @@ body {
 .stat-val { font-family: var(--display); font-size: 22px; color: var(--amber); font-style: italic; }
 .stat-lbl { font-size: 9px; color: var(--text-3); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--mono); }
 
+.readiness-panel { display: flex; flex-direction: column; gap: 8px; }
+.readiness-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; }
+.readiness-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.readiness-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex-shrink: 0; }
+.readiness-row.ok .readiness-dot { background: var(--green); box-shadow: 0 0 12px rgba(58,173,106,0.28); }
+.readiness-row.warn .readiness-dot { background: var(--yellow); }
+.readiness-label { font-size: 11px; color: var(--text-2); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.readiness-state { font-family: var(--mono); font-size: 9px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; }
+.ops-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ops-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+.ops-val { font-family: var(--display); font-size: 21px; color: var(--text); font-style: italic; line-height: 1; }
+.ops-label { margin-top: 5px; font-family: var(--mono); font-size: 8px; letter-spacing: 0.8px; color: var(--text-3); text-transform: uppercase; }
+.ops-note { margin-top: 8px; font-size: 10px; color: var(--text-3); line-height: 1.55; }
+
 /* Scrollable booth list */
 .panel-booth-list { flex: 1; overflow-y: auto; padding: 10px; }
 .panel-booth-list::-webkit-scrollbar { width: 3px; }
@@ -444,7 +458,7 @@ option { background: var(--bg2); color: var(--text); }
   <span class="topbar-title">Venue Editor</span>
   <div class="topbar-divider"></div>
   <div class="topbar-venue-name" id="topbarVenueName" onclick="openVenueModal()">
-    📍 Select a venue...
+    Venue · Select a venue...
   </div>
   <div class="topbar-right">
     <button class="tb-btn" onclick="clearAll()">
@@ -526,6 +540,20 @@ option { background: var(--bg2); color: var(--text); }
           <div class="stat-lbl">Max Revenue</div>
         </div>
       </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Publish Readiness</div>
+      <div class="readiness-panel" id="readinessPanel"></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Revenue Intelligence</div>
+      <div class="ops-grid">
+        <div class="ops-card"><div class="ops-val" id="opsPlatformFee">$0</div><div class="ops-label">7% platform fee</div></div>
+        <div class="ops-card"><div class="ops-val" id="opsFoodRisk">0</div><div class="ops-label">review flags</div></div>
+      </div>
+      <div class="ops-note" id="opsNote">Draw booths to see booking integrity and review signals.</div>
     </div>
 
     <!-- Booth list -->
@@ -649,9 +677,9 @@ option { background: var(--bg2); color: var(--text); }
     </div>
 
     <div class="prop-actions" id="propActions" style="display:none;">
-      <button class="prop-btn prop-btn-save" onclick="applyBoothProps()">✓ Apply Changes</button>
+      <button class="prop-btn prop-btn-save" onclick="applyBoothProps()">Apply Changes</button>
       <button class="prop-btn" onclick="duplicateBooth()">⧉ Duplicate</button>
-      <button class="prop-btn prop-btn-danger" onclick="deleteSelected()">✕ Delete Booth</button>
+      <button class="prop-btn prop-btn-danger" onclick="deleteSelected()">Delete Booth</button>
     </div>
   </div>
 
@@ -662,7 +690,7 @@ option { background: var(--bg2); color: var(--text); }
   <div class="ctx-item" onclick="ctxEdit()">✏️ Edit Properties</div>
   <div class="ctx-item" onclick="ctxDuplicate()">⧉ Duplicate</div>
   <div class="ctx-item-divider"></div>
-  <div class="ctx-item danger" onclick="ctxDelete()">✕ Delete</div>
+  <div class="ctx-item danger" onclick="ctxDelete()">Delete</div>
 </div>
 
 <!-- VENUE PICKER MODAL -->
@@ -695,7 +723,7 @@ const VENUES = [
     id: 'swangard',
     name: 'Swangard Stadium',
     location: 'Burnaby, BC',
-    icon: '🏟️',
+    icon: 'ST',
     lat: 49.2308649650753, lng: -123.02144908318446, zoom: 18,
     size: '~220,000 sq ft',
     desc: 'Main venue for TCICS events'
@@ -704,7 +732,7 @@ const VENUES = [
     id: 'sunset_beach',
     name: 'Sunset Beach Park',
     location: 'Vancouver, BC',
-    icon: '🏖️',
+    icon: 'SB',
     lat: 49.279420059494676, lng: -123.13806947145564, zoom: 17,
     size: '~180,000 sq ft',
     desc: 'Beachfront park, English Bay'
@@ -713,7 +741,7 @@ const VENUES = [
     id: 'robson_square',
     name: 'Robson Square',
     location: 'Vancouver, BC',
-    icon: '🏛️',
+    icon: 'RS',
     lat: 49.282325268937036, lng: -123.121308477289, zoom: 18,
     size: '~60,000 sq ft',
     desc: 'Downtown civic plaza'
@@ -722,7 +750,7 @@ const VENUES = [
     id: 'trout_lake',
     name: 'Trout Lake Park',
     location: 'East Vancouver, BC',
-    icon: '🌳',
+    icon: 'TL',
     lat: 49.254159258371466, lng: -123.0610064036096, zoom: 17,
     size: '~350,000 sq ft',
     desc: 'Community park & event field'
@@ -731,7 +759,7 @@ const VENUES = [
     id: 'hastings_park',
     name: 'Hastings Park',
     location: 'Vancouver, BC',
-    icon: '🎡',
+    icon: 'HP',
     lat: 49.28329433390627, lng: -123.03794942213342, zoom: 16,
     size: '~1.5M sq ft',
     desc: 'Large fairgrounds & event space'
@@ -740,7 +768,7 @@ const VENUES = [
     id: 'andy_livingstone',
     name: 'Andy Livingstone Park',
     location: 'Downtown East, BC',
-    icon: '⚽',
+    icon: 'AL',
     lat: 49.278827380457805, lng: -123.1058071125825, zoom: 18,
     size: '~90,000 sq ft',
     desc: 'Sports fields & open space'
@@ -749,7 +777,7 @@ const VENUES = [
     id: 'granville_island',
     name: 'Granville Island (Ron Basford Park)',
     location: 'Vancouver, BC',
-    icon: '🎨',
+    icon: 'GI',
     lat: 49.26891338296718, lng: -123.13153205902549, zoom: 17,
     size: '~550,000 sq ft',
     desc: 'Cultural hub & public market'
@@ -758,7 +786,7 @@ const VENUES = [
     id: 'queen_elizabeth',
     name: 'Queen Elizabeth Park',
     location: 'Vancouver, BC',
-    icon: '🌺',
+    icon: 'QE',
     lat: 49.24178280964838, lng: -123.11264409961325, zoom: 16,
     size: '~1.3M sq ft',
     desc: 'Gardens & event lawns'
@@ -767,7 +795,7 @@ const VENUES = [
     id: 'lafarge_lake',
     name: 'Lafarge Lake Park',
     location: 'Coquitlam, BC',
-    icon: '🏞️',
+    icon: 'LL',
     lat: 49.28715595251456, lng: -122.78713262741859, zoom: 17,
     size: '~400,000 sq ft',
     desc: 'Lake & amphitheatre event space'
@@ -1246,7 +1274,7 @@ overlay.addEventListener('mousedown', e => {
       booths = booths.filter(b => b.id !== hit.id);
       if (selectedBooth?.id === hit.id) deselectBooth();
       updateStats(); renderBoothList(); redraw();
-      showToast('🗑', 'Booth deleted');
+      showToast('Deleted', 'Booth deleted');
       return;
     }
     selectBooth(hit);
@@ -1406,7 +1434,7 @@ overlay.addEventListener('mouseup', e => {
     selectBooth(newBooth);
     drawRect = null; drawStart = null;
     updateStats(); renderBoothList(); redraw();
-    showToast('✓', `Booth ${newBooth.id} added — ${wm}×${hm}m`);
+    showToast('Added', `Booth ${newBooth.id} added — ${wm}×${hm}m`);
     return;
   }
 
@@ -1417,7 +1445,7 @@ overlay.addEventListener('mouseup', e => {
     resizeBooth = null;
     resizeSnap = null;
     map.dragging.enable();
-    showToast('⬡', 'Booth resized');
+    showToast('Resize', 'Booth resized');
     return;
   }
 
@@ -1600,7 +1628,7 @@ function applyBoothProps() {
   selectedBooth.rotation = parseInt(document.getElementById('propRotation').value) || 0;
   applyDimensions();
   updateStats(); renderBoothList(); redraw();
-  showToast('✓', 'Properties saved');
+  showToast('Saved', 'Properties saved');
 }
 
 function deleteSelected() {
@@ -1608,7 +1636,7 @@ function deleteSelected() {
   booths = booths.filter(b => b.id !== selectedBooth.id);
   deselectBooth();
   updateStats(); renderBoothList(); redraw();
-  showToast('🗑', 'Booth deleted');
+  showToast('Deleted', 'Booth deleted');
 }
 
 function duplicateBooth() {
@@ -1627,7 +1655,7 @@ function duplicateBooth() {
   booths.push(newBooth);
   selectBooth(newBooth);
   updateStats(); renderBoothList(); redraw();
-  showToast('⧉', 'Booth duplicated');
+  showToast('Duplicate', 'Booth duplicated');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1679,7 +1707,7 @@ function selectBoothType(id) {
   selectedBoothType = BOOTH_TYPES.find(t => t.id === id);
   renderBoothTypes();
   if (currentTool !== 'draw') setTool('draw');
-  showToast('▭', `Drawing: ${selectedBoothType.label}`);
+  showToast('Draw', `Drawing: ${selectedBoothType.label}`);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1734,9 +1762,9 @@ function loadVenue(id) {
   renderVenueList();
   redraw();
 
-  document.getElementById('topbarVenueName').textContent = `📍 ${currentVenue.name}`;
+  document.getElementById('topbarVenueName').textContent = `Venue · ${currentVenue.name}`;
   updateHint(`<strong>${currentVenue.name}</strong> loaded. Choose <strong>Draw Booth</strong> and drag to place booths on the satellite view.`);
-  showToast('📍', `${currentVenue.name} loaded`);
+  showToast('Venue', `${currentVenue.name} loaded`);
   closeVenueModal();
 }
 
@@ -1775,6 +1803,42 @@ function updateStats() {
   document.getElementById('statTotal').textContent = booths.length;
   const rev = booths.reduce((s, b) => s + b.price, 0);
   document.getElementById('statRevenue').textContent = rev >= 1000 ? `$${(rev/1000).toFixed(1)}k` : `$${rev}`;
+  updateReadiness();
+}
+
+function updateReadiness() {
+  const revenue = booths.reduce((s, b) => s + Number(b.price || 0), 0);
+  const foodCount = booths.filter(b => b.type === 'food').length;
+  const missingDimensions = booths.filter(b => !b.widthM || !b.lengthM).length;
+  const checks = [
+    { label: 'Venue selected', ok: !!currentVenue, state: currentVenue ? 'ready' : 'needed' },
+    { label: 'Booths drawn', ok: booths.length > 0, state: booths.length ? `${booths.length} mapped` : 'needed' },
+    { label: 'Pricing configured', ok: revenue > 0, state: revenue ? `$${revenue.toLocaleString()}` : 'needed' },
+    { label: 'Dimensions assigned', ok: booths.length > 0 && missingDimensions === 0, state: missingDimensions ? `${missingDimensions} missing` : 'ready' },
+    { label: 'Permit risk review', ok: foodCount === 0, state: foodCount ? `${foodCount} food flags` : 'clear' },
+  ];
+
+  const panel = document.getElementById('readinessPanel');
+  if (panel) {
+    panel.innerHTML = checks.map(c => `
+      <div class="readiness-row ${c.ok ? 'ok' : 'warn'}">
+        <div class="readiness-left"><span class="readiness-dot"></span><span class="readiness-label">${c.label}</span></div>
+        <span class="readiness-state">${c.state}</span>
+      </div>
+    `).join('');
+  }
+
+  const fee = Math.round(revenue * 0.07);
+  const feeEl = document.getElementById('opsPlatformFee');
+  const riskEl = document.getElementById('opsFoodRisk');
+  const noteEl = document.getElementById('opsNote');
+  if (feeEl) feeEl.textContent = fee >= 1000 ? `$${(fee/1000).toFixed(1)}k` : `$${fee}`;
+  if (riskEl) riskEl.textContent = foodCount;
+  if (noteEl) {
+    noteEl.textContent = foodCount
+      ? `${foodCount} booth${foodCount === 1 ? '' : 's'} will enter food/permit review after vendor application.`
+      : 'No food-risk booths in this layout. Standard vendor review only.';
+  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1813,7 +1877,7 @@ function updateAuthUI() {
 }
 
 async function signInWithEmail(email, password) {
-  if (!email || !password) { showToast('⚠️', 'Enter email and password'); return; }
+  if (!email || !password) { showToast('Required', 'Enter email and password'); return; }
 
   const btn = document.querySelector('#authModal .tb-btn-primary');
   btn.textContent = 'Signing in...';
@@ -1827,7 +1891,7 @@ async function signInWithEmail(email, password) {
       currentUser = signInData.user;
       updateAuthUI();
       closeAuthModal();
-      showToast('✓', `Welcome back, ${email.split('@')[0]}!`);
+      showToast('Signed in', `Welcome back, ${email.split('@')[0]}!`);
       return;
     }
 
@@ -1849,10 +1913,10 @@ async function signInWithEmail(email, password) {
         currentUser = signUpData.user;
         updateAuthUI();
         closeAuthModal();
-        showToast('✓', `Account created! Welcome, ${email.split('@')[0]}`);
+        showToast('Created', `Account created. Welcome, ${email.split('@')[0]}`);
       } else {
         // Email confirmation required
-        showToast('📧', 'Check your email to confirm your account');
+        showToast('Email', 'Check your email to confirm your account');
         closeAuthModal();
       }
       return;
@@ -1862,7 +1926,7 @@ async function signInWithEmail(email, password) {
 
   } catch (err) {
     console.error('Auth error:', err);
-    showToast('✕', err.message || 'Authentication failed');
+    showToast('Error', err.message || 'Authentication failed');
   } finally {
     btn.textContent = 'Sign In / Sign Up';
     btn.disabled = false;
@@ -1873,16 +1937,16 @@ async function signOut() {
   await sb.auth.signOut();
   currentUser = null;
   updateAuthUI();
-  showToast('✓', 'Signed out');
+  showToast('Signed out', 'Signed out');
 }
 
 // ════════════════════════════════════════════════════════════
 // PUBLISH EVENT TO SUPABASE
 // ════════════════════════════════════════════════════════════
 async function publishEvent() {
-  if (!currentUser) { openAuthModal(); showToast('⚠️', 'Sign in to publish'); return; }
-  if (!currentVenue) { showToast('⚠️', 'Select a venue first'); return; }
-  if (booths.length === 0) { showToast('⚠️', 'Draw at least one booth first'); return; }
+  if (!currentUser) { openAuthModal(); showToast('Required', 'Sign in to publish'); return; }
+  if (!currentVenue) { showToast('Required', 'Select a venue first'); return; }
+  if (booths.length === 0) { showToast('Required', 'Draw at least one booth first'); return; }
 
   openPublishModal();
 }
@@ -1893,9 +1957,9 @@ async function confirmPublish() {
   const startDate   = document.getElementById('pubStartDate').value;
   const endDate     = document.getElementById('pubEndDate').value;
   const attendance  = document.getElementById('pubAttendance').value;
-  const emoji       = document.getElementById('pubEmoji').value || '🎪';
+  const marker      = document.getElementById('pubMarker').value || 'VM';
 
-  if (!name) { showToast('⚠️', 'Event name is required'); return; }
+  if (!name) { showToast('Required', 'Event name is required'); return; }
 
   const publishBtn = document.getElementById('confirmPublishBtn');
   publishBtn.textContent = 'Publishing...';
@@ -1919,7 +1983,7 @@ async function confirmPublish() {
         venue_id:            venueData.id,
         name,
         description,
-        banner_emoji:        emoji,
+        banner_emoji:        marker,
         status:              'published',
         start_date:          startDate || null,
         end_date:            endDate || null,
@@ -1954,17 +2018,17 @@ async function confirmPublish() {
     savedLayouts[currentVenue.id] = { eventId: event.id, booths: [...booths] };
 
     closePublishModal();
-    showToast('🚀', `"${name}" is now live!`);
+    showToast('Published', `"${name}" is now live`);
     renderVenueList();
 
     // Show success with event link
     setTimeout(() => {
-      showToast('🔗', 'Open public page to see it live');
+      showToast('Live link', 'Open public page to see it live');
     }, 2000);
 
   } catch (err) {
     console.error(err);
-    showToast('✕', err.message || 'Publish failed');
+    showToast('Error', err.message || 'Publish failed');
   } finally {
     publishBtn.textContent = 'Publish Event';
     publishBtn.disabled = false;
@@ -1975,14 +2039,14 @@ async function confirmPublish() {
 // SAVE / EXPORT / CLEAR
 // ════════════════════════════════════════════════════════════
 function saveLayout() {
-  if (!currentVenue) { showToast('⚠️', 'Select a venue first'); return; }
+  if (!currentVenue) { showToast('Required', 'Select a venue first'); return; }
   savedLayouts[currentVenue.id] = [...booths];
   renderVenueList();
-  showToast('💾', `Layout saved — ${booths.length} booths`);
+  showToast('Saved', `Layout saved — ${booths.length} booths`);
 }
 
 function exportLayout() {
-  if (booths.length === 0) { showToast('⚠️', 'No booths to export'); return; }
+  if (booths.length === 0) { showToast('Required', 'No booths to export'); return; }
   const data = {
     venue: currentVenue?.name || 'Unknown',
     exported: new Date().toISOString(),
@@ -1997,7 +2061,7 @@ function exportLayout() {
   a.href = URL.createObjectURL(blob);
   a.download = `${currentVenue?.id || 'venue'}_layout.json`;
   a.click();
-  showToast('⬇', 'Layout exported as JSON');
+  showToast('Exported', 'Layout exported as JSON');
 }
 
 function clearAll() {
@@ -2005,7 +2069,7 @@ function clearAll() {
   if (!confirm(`Delete all ${booths.length} booths?`)) return;
   booths = []; boothCounter = 1;
   deselectBooth(); updateStats(); renderBoothList(); redraw();
-  showToast('🗑', 'All booths cleared');
+  showToast('Cleared', 'All booths cleared');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2018,7 +2082,7 @@ function openVenueModal() {
       <div class="vgi-thumb">${v.icon}</div>
       <div class="vgi-info">
         <div class="vgi-name">${v.name}</div>
-        <div class="vgi-loc">📍 ${v.location}</div>
+        <div class="vgi-loc">Venue · ${v.location}</div>
         <div class="vgi-size">${v.size}</div>
       </div>
     </div>
@@ -2127,9 +2191,9 @@ setTimeout(() => loadVenue('swangard'), 300);</script>
         Publishing will make this event live on the public page with <strong style="color:var(--amber)">${booths.length} booths</strong> at <strong style="color:var(--amber)" id="pubVenueName">—</strong>. Vendors will be able to book immediately.
       </div>
       <div class="prop-row" style="margin-bottom:0">
-        <div class="prop-group">
-          <label class="prop-label">Banner Emoji</label>
-          <input class="prop-input" id="pubEmoji" placeholder="🎪" maxlength="2" style="text-align:center;font-size:22px;">
+      <div class="prop-group">
+          <label class="prop-label">Event Marker</label>
+          <input class="prop-input" id="pubMarker" placeholder="VM" maxlength="4" style="text-align:center;font-size:18px;font-family:var(--mono);font-weight:800;letter-spacing:1px;">
         </div>
         <div class="prop-group">
           <label class="prop-label">Expected Attendees</label>

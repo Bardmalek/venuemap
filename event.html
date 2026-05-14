@@ -120,6 +120,11 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
 .step-dot{height:3px;border-radius:2px;background:var(--border);flex:1;transition:background 0.3s;}
 .step-dot.active{background:var(--amber);}
 .step-dot.done{background:var(--amber-border);}
+.flow-symbol{width:56px;height:56px;margin:0 auto 14px;border-radius:18px;border:1px solid var(--amber-border);background:var(--amber-bg);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:800;letter-spacing:1px;color:var(--amber);}
+.trust-panel{margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;font-size:12px;color:var(--ink2);line-height:1.55;}
+.trust-panel strong{color:var(--ink);font-weight:700;}
+.hold-note{margin-top:14px;border:1px solid rgba(26,107,60,0.22);background:rgba(26,107,60,0.06);border-radius:10px;padding:14px 15px;font-size:12px;color:var(--ink2);line-height:1.65;}
+.hold-note-title{font-size:10px;font-family:var(--mono);font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--green);margin-bottom:5px;}
 
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:600;color:white;z-index:3000;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:8px;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
@@ -248,9 +253,9 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
       <!-- STEP 2: Summary -->
       <div id="modalStep2" style="display:none;">
         <div style="text-align:center;padding:10px 0 20px;">
-          <div style="font-size:48px;margin-bottom:12px;">✅</div>
+          <div class="flow-symbol">HOLD</div>
           <div style="font-family:var(--serif);font-size:24px;font-style:italic;margin-bottom:8px;">Almost there</div>
-          <div style="font-size:13px;color:var(--ink2);line-height:1.7;">Your booth is being held for <strong style="color:var(--amber)">10 minutes</strong>. Complete payment to confirm.</div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7;">VenueMap will create a timed hold and calculate the exact total on the server. Payment integration can attach to this hold without trusting the browser.</div>
         </div>
         <div style="background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:10px;padding:16px;">
           <div style="font-size:10px;font-family:var(--mono);color:var(--ink3);letter-spacing:1px;margin-bottom:10px;">ORDER SUMMARY</div>
@@ -267,15 +272,20 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
             <span id="orderTotal" style="color:var(--amber);font-family:var(--serif);font-size:22px;font-style:italic;">$0</span>
           </div>
         </div>
+        <div class="trust-panel"><strong>Payment integrity:</strong> the final booth price, platform fee, status, and expiry are decided by the Edge Function, not by this page.</div>
       </div>
 
-      <!-- STEP 3: Confirmed -->
+      <!-- STEP 3: Hold Created -->
       <div id="modalStep3" style="display:none;">
         <div style="text-align:center;padding:10px 0;">
-          <div style="font-size:56px;margin-bottom:14px;">🎉</div>
-          <div style="font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:10px;">Booth Confirmed!</div>
-          <div style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:20px;">Check your email for your confirmation and QR code for event day check-in.</div>
+          <div class="flow-symbol">VM</div>
+          <div style="font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:10px;">Booking Hold Created</div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:20px;">Your booth is held while payment is completed. PayPal can now be wired into this server-side booking record without changing the vendor flow.</div>
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:13px;color:var(--amber);" id="bookingRef">REF: VM-0000</div>
+          <div class="hold-note">
+            <div class="hold-note-title">City-grade recordkeeping</div>
+            This hold has an expiry time, idempotency key, status history, audit trail, platform fee calculation, and document-review path.
+          </div>
         </div>
       </div>
     </div>
@@ -292,6 +302,7 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
 <script>
 const SUPABASE_URL  = 'https://ortjeciwbhxkptfyysda.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // Get event ID from URL
@@ -303,6 +314,7 @@ let allBooths       = [];
 let selectedBooth   = null;
 let currentFilter   = 'all';
 let modalStep       = 1;
+let currentHold     = null;
 
 // ── MAP ──
 const map = L.map('map', { center:[49.2308,  -123.0214], zoom: 17, zoomControl: true });
@@ -343,8 +355,13 @@ function roundRect(c, x, y, w, h, r) {
 
 const STATUS_COLORS = {
   available: { fill: 'rgba(26,107,60,0.2)',  stroke: '#1a6b3c' },
+  hold:      { fill: 'rgba(180,83,9,0.2)',   stroke: '#b45309' },
   reserved:  { fill: 'rgba(180,83,9,0.2)',   stroke: '#b45309' },
+  payment_started:{ fill:'rgba(180,83,9,0.2)',stroke: '#b45309' },
+  payment_pending:{ fill:'rgba(192,57,43,0.2)',stroke: '#c0392b' },
+  paid:      { fill: 'rgba(192,57,43,0.2)',  stroke: '#c0392b' },
   booked:    { fill: 'rgba(192,57,43,0.2)',  stroke: '#c0392b' },
+  checked_in:{ fill: 'rgba(192,57,43,0.2)',  stroke: '#c0392b' },
   maintenance:{ fill:'rgba(100,100,100,0.2)',stroke: '#666'    },
 };
 
@@ -409,7 +426,7 @@ overlay.addEventListener('mousedown', e => {
     if (lx>=-w/2&&lx<=w/2&&ly>=-h/2&&ly<=h/2) { hit=b; break; }
   }
   if (hit) {
-    if (hit.status !== 'available') { showToast('⛔', `Booth ${hit.booth_ref} is ${hit.status}`); return; }
+    if (hit.status !== 'available') { showToast('Unavailable', `Booth ${hit.booth_ref} is ${formatStatus(hit.status)}`); return; }
     selectBooth(hit);
   } else {
     deselectBooth();
@@ -496,7 +513,7 @@ function subscribeToBooths() {
         if (idx >= 0) { allBooths[idx] = { ...allBooths[idx], ...payload.new }; }
         if (selectedBooth?.id === payload.new.id && payload.new.status !== 'available') {
           deselectBooth();
-          showToast('⚠️', 'Booth just got reserved by someone else');
+          showToast('Live update', 'Booth just got held by someone else');
         }
         renderBoothList();
         updateNavSpots();
@@ -515,7 +532,7 @@ async function loadEvent() {
     .eq('id', eventId)
     .single();
 
-  if (error || !event) { showToast('✕', 'Event not found'); return; }
+  if (error || !event) { showToast('Error', 'Event not found'); return; }
 
   currentEvent = event;
 
@@ -526,14 +543,14 @@ async function loadEvent() {
 
   const venue = event.venues;
   if (venue) {
-    document.getElementById('spSub').textContent = `📍 ${venue.name} · ${venue.location}`;
+    document.getElementById('spSub').textContent = `Venue · ${venue.name} · ${venue.location}`;
     map.setView([venue.lat, venue.lng], venue.default_zoom || 17);
 
     // Venue center marker
     const icon = L.divIcon({
       className:'',
       html:`<div style="display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateX(-50%);">
-        <div style="background:rgba(254,252,250,0.95);border:1.5px solid #d4620a;border-radius:8px;padding:4px 10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#d4620a;white-space:nowrap;box-shadow:0 4px 16px rgba(212,98,10,0.2);">${venue.icon||'📍'} ${venue.name}</div>
+        <div style="background:rgba(254,252,250,0.95);border:1.5px solid #d4620a;border-radius:8px;padding:4px 10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#d4620a;white-space:nowrap;box-shadow:0 4px 16px rgba(212,98,10,0.2);">VM ${venue.name}</div>
         <div style="width:2px;height:10px;background:linear-gradient(to bottom,#d4620a,transparent);"></div>
         <div style="width:8px;height:8px;background:#d4620a;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(212,98,10,0.5);"></div>
       </div>`,
@@ -585,7 +602,7 @@ async function nextStep() {
     // Validate
     const email = document.getElementById('fEmail').value.trim();
     const biz   = document.getElementById('fBizName').value.trim();
-    if (!email || !biz) { showToast('⚠️', 'Name and email required'); return; }
+    if (!email || !biz) { showToast('Required', 'Business name and email required'); return; }
 
     const price   = Number(selectedBooth.price);
     const fee     = Math.round(price * 0.07);
@@ -600,39 +617,41 @@ async function nextStep() {
     document.getElementById('modalNextBtn').textContent = 'Confirm & Pay →';
 
   } else if (modalStep === 2) {
-    // Create booking in Supabase
-    document.getElementById('modalNextBtn').textContent = 'Processing...';
+    // Create a server-side booking hold. Payment providers attach to this record later.
+    document.getElementById('modalNextBtn').textContent = 'Creating hold...';
     document.getElementById('modalNextBtn').disabled = true;
 
     try {
-      const price  = Number(selectedBooth.price);
-      const fee    = Math.round(price * 0.07);
-      const total  = price + fee;
+      const contactName = `${document.getElementById('fFirstName').value.trim()} ${document.getElementById('fLastName').value.trim()}`.trim();
+      const idempotencyKey = crypto.randomUUID ? crypto.randomUUID() : `vm-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const response = await fetch(`${FUNCTIONS_URL}/create-booking-hold`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'x-idempotency-key': idempotencyKey,
+        },
+        body: JSON.stringify({
+          booth_id: selectedBooth.id,
+          business_name: document.getElementById('fBizName').value.trim(),
+          business_type: document.getElementById('fBizType').value,
+          contact_name: contactName,
+          contact_email: document.getElementById('fEmail').value.trim(),
+          contact_phone: document.getElementById('fPhone').value.trim(),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'Unable to create booking hold');
 
-      // Get or create anonymous user session
-      let userId = (await sb.auth.getSession()).data.session?.user?.id;
-      if (!userId) {
-        // Sign up anonymously with email as identifier
-        const email = document.getElementById('fEmail').value.trim();
-        const { data } = await sb.auth.signInWithOtp({ email });
-        userId = null; // Will be set after OTP — for now create booking with null
-      }
-
-      const { data: booking, error } = await sb.from('bookings').insert({
-        booth_id:      selectedBooth.id,
-        event_id:      eventId,
-        vendor_id:     userId || '00000000-0000-0000-0000-000000000000', // placeholder
-        business_name: document.getElementById('fBizName').value.trim(),
-        business_type: document.getElementById('fBizType').value,
-        contact_email: document.getElementById('fEmail').value.trim(),
-        contact_phone: document.getElementById('fPhone').value.trim(),
-        booth_price:   price,
-        platform_fee:  fee,
-        total_amount:  total,
-        status:        'confirmed',
-      }).select().single();
-
-      if (error) throw error;
+      const booking = payload.booking;
+      currentHold = payload;
+      const price = Number(booking.booth_price || 0);
+      const fee = Number(booking.platform_fee || 0);
+      const total = Number(booking.total_amount || price + fee);
+      document.getElementById('orderBoothPrice').textContent = `$${price.toLocaleString()}`;
+      document.getElementById('orderFee').textContent = `$${fee.toLocaleString()}`;
+      document.getElementById('orderTotal').textContent = `$${total.toLocaleString()}`;
 
       document.getElementById('bookingRef').textContent = `REF: VM-${booking.id.slice(0,8).toUpperCase()}`;
       modalStep = 3;
@@ -640,12 +659,12 @@ async function nextStep() {
 
       // Update local booth status
       const idx = allBooths.findIndex(b => b.id === selectedBooth.id);
-      if (idx >= 0) allBooths[idx].status = 'booked';
+      if (idx >= 0) allBooths[idx].status = 'reserved';
       deselectBooth();
 
     } catch (err) {
       console.error(err);
-      showToast('✕', 'Booking failed — ' + (err.message || 'try again'));
+      showToast('Error', 'Booking failed — ' + (err.message || 'try again'));
       document.getElementById('modalNextBtn').textContent = 'Confirm & Pay →';
       document.getElementById('modalNextBtn').disabled = false;
     }
@@ -665,8 +684,14 @@ function updateModalStep() {
   });
   const foot = document.getElementById('modalFoot');
   if (modalStep === 3) {
-    foot.innerHTML = `<button class="btn-primary" onclick="closeBookingModal()" style="flex:1">Done ✓</button>`;
+    foot.innerHTML = `<button class="btn-primary" onclick="closeBookingModal()" style="flex:1">Close</button>`;
+  } else {
+    foot.innerHTML = `<button class="btn-ghost" onclick="closeBookingModal()">Cancel</button><button class="btn-primary" id="modalNextBtn" onclick="nextStep()">${modalStep === 1 ? 'Continue →' : 'Confirm & Pay →'}</button>`;
   }
+}
+
+function formatStatus(status) {
+  return String(status || '').replaceAll('_', ' ');
 }
 
 // ── TOAST ──

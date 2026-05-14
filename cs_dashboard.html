@@ -158,6 +158,8 @@ tr:hover td{background:var(--bg2);}
 .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty{text-align:center;padding:40px 20px;color:var(--ink3);font-size:12px;}
+@media(max-width:1180px){.stats-row,.stats-row[style]{grid-template-columns:repeat(2,1fr)!important;}.sidebar{width:210px;}}
+@media(max-width:780px){.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;border-right:0;border-bottom:1px solid var(--border);}.content{padding:14px;}.stats-row,.stats-row[style]{grid-template-columns:1fr!important;}.table-card{overflow-x:auto;}table{min-width:760px;}}
 </style>
 </head>
 <body>
@@ -257,6 +259,16 @@ tr:hover td{background:var(--bg2);}
         <div class="stat-card blue"><div class="stat-label">Active Events</div><div class="stat-num" id="oEvents">—</div><div class="stat-sub">Published now</div></div>
         <div class="stat-card yellow"><div class="stat-label">Pending Bookings</div><div class="stat-num" id="oPending">—</div><div class="stat-sub">Need attention</div></div>
         <div class="stat-card red"><div class="stat-label">Total Users</div><div class="stat-num" id="oUsers">—</div><div class="stat-sub">Vendors + organizers</div></div>
+      </div>
+
+      <div class="table-card" style="margin-bottom:16px;">
+        <div class="table-head"><div><div class="table-head-title">Municipal Operations Layer</div><div class="table-head-sub">Permit, document, risk, and audit readiness across the platform</div></div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px;">
+          <div class="stat-card yellow"><div class="stat-label">Permit Queue</div><div class="stat-num" id="oPermitQueue">—</div><div class="stat-sub">Reviews needing attention</div></div>
+          <div class="stat-card blue"><div class="stat-label">Documents</div><div class="stat-num" id="oDocuments">—</div><div class="stat-sub">Uploaded vendor files</div></div>
+          <div class="stat-card red"><div class="stat-label">Risk Flags</div><div class="stat-num" id="oRiskFlags">—</div><div class="stat-sub">Food and high-risk booths</div></div>
+          <div class="stat-card green"><div class="stat-label">Audit Events</div><div class="stat-num" id="oAuditEvents">—</div><div class="stat-sub">Recent logged actions</div></div>
+        </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -425,6 +437,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null;
 let allBookings = [], allUsers = [], allEvents = [], allBooths = [];
+let allApplications = [], allDocuments = [], allPermitReviews = [], allAuditLogs = [];
 let filteredBookings = [], filteredUsers = [], filteredBooths = [];
 let activityLog = [];
 let editingUserId = null;
@@ -447,7 +460,7 @@ async function signOut() {
 
 // ── LOAD ALL ──
 async function loadAll() {
-  await Promise.all([loadBookings(), loadUsers(), loadEvents(), loadBooths()]);
+  await Promise.all([loadBookings(), loadUsers(), loadEvents(), loadBooths(), loadCityOps()]);
   renderOverview();
   updateSidebarCounts();
 }
@@ -486,6 +499,19 @@ async function loadBooths() {
   renderCSBooths();
 }
 
+async function loadCityOps() {
+  const [applications, documents, reviews, audits] = await Promise.all([
+    sb.from('event_applications').select('*').order('created_at', { ascending: false }),
+    sb.from('vendor_documents').select('*').order('created_at', { ascending: false }),
+    sb.from('permit_reviews').select('*').order('created_at', { ascending: false }),
+    sb.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100),
+  ]);
+  allApplications = applications.error ? [] : (applications.data || []);
+  allDocuments = documents.error ? [] : (documents.data || []);
+  allPermitReviews = reviews.error ? [] : (reviews.data || []);
+  allAuditLogs = audits.error ? [] : (audits.data || []);
+}
+
 // ── SIDEBAR COUNTS ──
 function updateSidebarCounts() {
   document.getElementById('sbBookings').textContent = allBookings.length;
@@ -503,7 +529,9 @@ function renderOverview() {
   const orgRevenue  = gmv - vmRevenue;
   const confirmed   = allBookings.filter(b => ['confirmed','paid','checked_in'].includes(b.status)).length;
   const published   = allEvents.filter(e => e.status === 'published').length;
-  const pending     = allBookings.filter(b => b.status === 'pending').length;
+  const pending     = allBookings.filter(b => ['pending','hold','payment_started','payment_pending'].includes(b.status)).length;
+  const permitQueue = allApplications.filter(a => ['submitted','organizer_review','city_review'].includes(a.status || '')).length + allPermitReviews.filter(r => ['pending','needs_changes'].includes(r.status || '')).length;
+  const riskFlags   = allBooths.filter(b => /food|beverage/i.test(b.category || '') || ['high','critical'].includes(b.risk_level)).length;
 
   const fmt = v => v >= 1000 ? `$${(v/1000).toFixed(1)}k` : `$${v}`;
 
@@ -513,6 +541,10 @@ function renderOverview() {
   document.getElementById('oEvents').textContent    = published;
   document.getElementById('oPending').textContent   = pending;
   document.getElementById('oUsers').textContent     = allUsers.length;
+  document.getElementById('oPermitQueue').textContent = permitQueue;
+  document.getElementById('oDocuments').textContent = allDocuments.length;
+  document.getElementById('oRiskFlags').textContent = riskFlags;
+  document.getElementById('oAuditEvents').textContent = allAuditLogs.length;
 
   const tbody = document.getElementById('oRecentBookings');
   tbody.innerHTML = allBookings.slice(0,10).map(b => `<tr>
@@ -755,7 +787,7 @@ async function lookupBooking() {
           ${badge(booking.status)}
           ${booking.status === 'pending'   ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','confirmed');lookupBooking()">Confirm</button>` : ''}
           ${booking.status === 'confirmed' ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','paid');lookupBooking()">Mark Paid</button>` : ''}
-          ${booking.status === 'paid'      ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','checked_in');lookupBooking()">Check In ✓</button>` : ''}
+          ${booking.status === 'paid'      ? `<button class="action-btn success" onclick="setBookingStatus('${booking.id}','checked_in');lookupBooking()">Check In</button>` : ''}
           ${!['cancelled','refunded'].includes(booking.status) ? `<button class="action-btn danger" onclick="setBookingStatus('${booking.id}','cancelled');lookupBooking()">Cancel</button>` : ''}
         </div>
       </div>
@@ -810,8 +842,8 @@ async function saveUserChanges() {
     role:      document.getElementById('umRole').value,
   };
   const { error } = await sb.from('profiles').update(updates).eq('id', editingUserId);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', 'User updated');
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', 'User updated');
   closeModal('userModal');
   await loadUsers();
 }
@@ -819,39 +851,39 @@ async function saveUserChanges() {
 // ── ACTIONS ──
 async function setBookingStatus(id, status) {
   const { error } = await sb.from('bookings').update({ status }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `Booking → ${status}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `Booking → ${status}`);
   await loadBookings();
   renderOverview();
 }
 
 async function setBoothStatus(id, status) {
   const { error } = await sb.from('booths').update({ status }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `Booth → ${status}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `Booth → ${status}`);
   await loadBooths();
 }
 
 async function setUserRole(id, role) {
   const { error } = await sb.from('profiles').update({ role }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `Role → ${role}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `Role → ${role}`);
   await loadUsers();
 }
 
 async function toggleEvent(id, currentStatus) {
   const newStatus = currentStatus === 'published' ? 'draft' : 'published';
   const { error } = await sb.from('events').update({ status: newStatus }).eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('✓', `Event ${newStatus}`);
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Updated', `Event ${newStatus}`);
   await loadEvents();
 }
 
 async function deleteEvent(id) {
   if (!confirm('Delete this event and all its booths? This cannot be undone.')) return;
   const { error } = await sb.from('events').delete().eq('id', id);
-  if (error) { showToast('✕', error.message); return; }
-  showToast('×', 'Event deleted');
+  if (error) { showToast('Error', error.message); return; }
+  showToast('Deleted', 'Event deleted');
   await loadEvents();
 }
 
@@ -912,10 +944,14 @@ function exportBookings() {
 function badge(status) {
   const map = {
     published:'bg', draft:'bgr', cancelled:'br', completed:'ba',
-    available:'bg', reserved:'by', booked:'br', maintenance:'bgr',
-    pending:'by', confirmed:'ba', paid:'bg', checked_in:'bg', refunded:'bgr'
+    available:'bg', hold:'by', reserved:'by', payment_started:'by', payment_pending:'br', booked:'br', maintenance:'bgr',
+    pending:'by', confirmed:'ba', paid:'bg', checked_in:'bg', refunded:'bgr', expired:'bgr'
   };
-  return `<span class="badge ${map[status]||'bgr'}">${status}</span>`;
+  return `<span class="badge ${map[status]||'bgr'}">${formatStatus(status)}</span>`;
+}
+
+function formatStatus(status) {
+  return String(status || 'unknown').replaceAll('_', ' ');
 }
 
 function roleBadge(role) {
