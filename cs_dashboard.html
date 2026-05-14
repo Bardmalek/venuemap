@@ -945,7 +945,7 @@ function badge(status) {
   const map = {
     published:'bg', draft:'bgr', cancelled:'br', completed:'ba',
     available:'bg', hold:'by', reserved:'by', payment_started:'by', payment_pending:'br', booked:'br', maintenance:'bgr',
-    pending:'by', confirmed:'ba', paid:'bg', checked_in:'bg', refunded:'bgr', expired:'bgr'
+    pending:'by', confirmed:'ba', paid:'bg', checked_in:'bg', refund_requested:'by', refunded:'bgr', expired:'bgr'
   };
   return `<span class="badge ${map[status]||'bgr'}">${formatStatus(status)}</span>`;
 }

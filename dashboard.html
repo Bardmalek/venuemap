@@ -67,6 +67,9 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
 .ops-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
 .ops-value{font-size:18px;font-weight:750;color:var(--ink);}
 .ops-note{font-size:11px;color:var(--ink3);line-height:1.5;margin-top:5px;}
+.chart-card{padding:18px 20px;border-top:1px solid var(--border);}
+.mini-chart{width:100%;height:130px;display:block;background:var(--bg2);border:1px solid var(--border);border-radius:12px;}
+.analytics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px;}
 
 /* TABLE */
 .table-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
@@ -140,7 +143,8 @@ tr:hover td{background:var(--bg2);}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:1100px){.stats-row,.ops-grid{grid-template-columns:repeat(2,1fr);}.sidebar{width:200px;}}
-@media(max-width:760px){.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;border-right:0;border-bottom:1px solid var(--border);}.content{padding:16px;}.stats-row,.ops-grid{grid-template-columns:1fr;}.table-card{overflow-x:auto;}table{min-width:720px;}}
+@media(max-width:1100px){.analytics-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:760px){.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;border-right:0;border-bottom:1px solid var(--border);}.content{padding:16px;}.stats-row,.ops-grid,.analytics-grid{grid-template-columns:1fr;}.table-card{overflow-x:auto;}table{min-width:720px;}}
 </style>
 </head>
 <body>
@@ -217,6 +221,25 @@ tr:hover td{background:var(--bg2);}
           <div class="ops-card"><div class="ops-label">Document Queue</div><div class="ops-value" id="opsDocuments">—</div><div class="ops-note">Vendor applications and document reviews.</div></div>
           <div class="ops-card"><div class="ops-label">Permit Risk</div><div class="ops-value" id="opsPermits">—</div><div class="ops-note">Food/high-risk booths needing civic attention.</div></div>
           <div class="ops-card"><div class="ops-label">Audit Layer</div><div class="ops-value" id="opsAudit">Enabled</div><div class="ops-note">Status transitions and serious actions are logged.</div></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div><div class="table-title">Organizer Analytics</div><div class="table-sub">Bookings, GMV, sell-through, timing, funnel, and demand signals</div></div>
+        </div>
+        <div class="analytics-grid">
+          <div class="ops-card"><div class="ops-label">Paid GMV</div><div class="ops-value" id="analyticsGmv">—</div><div class="ops-note">Paid and checked-in bookings only.</div></div>
+          <div class="ops-card"><div class="ops-label">Platform Fee</div><div class="ops-value" id="analyticsFee">—</div><div class="ops-note">7% of paid GMV where fee rows exist.</div></div>
+          <div class="ops-card"><div class="ops-label">Sell-Through</div><div class="ops-value" id="analyticsSellThrough">—</div><div class="ops-note">Paid or pending booths over inventory.</div></div>
+          <div class="ops-card"><div class="ops-label">Waitlist Demand</div><div class="ops-value" id="analyticsWaitlist">—</div><div class="ops-note">Active demand across booth types.</div></div>
+          <div class="ops-card"><div class="ops-label">Time First Sale</div><div class="ops-value" id="analyticsFirstSale">—</div><div class="ops-note">Event publish/create to first paid booking.</div></div>
+          <div class="ops-card"><div class="ops-label">Time Sold Out</div><div class="ops-value" id="analyticsSoldOut">—</div><div class="ops-note">Calculated when no booths are available.</div></div>
+          <div class="ops-card"><div class="ops-label">Funnel</div><div class="ops-value" id="analyticsFunnel">—</div><div class="ops-note">Views to paid or pending conversion.</div></div>
+          <div class="ops-card"><div class="ops-label">Top Booth Type</div><div class="ops-value" id="analyticsTopType">—</div><div class="ops-note">Best sell-through by booth category.</div></div>
+        </div>
+        <div class="chart-card">
+          <svg class="mini-chart" id="bookingsChart" viewBox="0 0 800 130" role="img" aria-label="Bookings over time"></svg>
         </div>
       </div>
 
@@ -409,6 +432,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 let currentUser = null;
 let allEvents = [], allBookings = [], allBooths = [], allVendors = [], allVenues = [];
 let allApplications = [], allDocuments = [], allPermitReviews = [], allAuditLogs = [];
+let allWaitlists = [], allAnalyticsEvents = [], allPromoCodes = [], allPromoRedemptions = [];
 let filteredEvents = [], filteredBookings = [], filteredBooths = [];
 
 // ── AUTH ──
@@ -470,16 +494,24 @@ async function loadVenues() {
 }
 
 async function loadCityOps() {
-  const [applications, documents, reviews, audits] = await Promise.all([
+  const [applications, documents, reviews, audits, waitlists, analytics, promoCodes, redemptions] = await Promise.all([
     sb.from('event_applications').select('*').order('created_at', { ascending: false }),
     sb.from('vendor_documents').select('*').order('created_at', { ascending: false }),
     sb.from('permit_reviews').select('*').order('created_at', { ascending: false }),
     sb.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
+    sb.from('waitlists').select('*').order('created_at', { ascending: false }),
+    sb.from('event_analytics_events').select('*').order('created_at', { ascending: false }),
+    sb.from('promo_codes').select('*').order('created_at', { ascending: false }),
+    sb.from('promo_code_redemptions').select('*').order('created_at', { ascending: false }),
   ]);
   allApplications = applications.error ? [] : (applications.data || []);
   allDocuments = documents.error ? [] : (documents.data || []);
   allPermitReviews = reviews.error ? [] : (reviews.data || []);
   allAuditLogs = audits.error ? [] : (audits.data || []);
+  allWaitlists = waitlists.error ? [] : (waitlists.data || []);
+  allAnalyticsEvents = analytics.error ? [] : (analytics.data || []);
+  allPromoCodes = promoCodes.error ? [] : (promoCodes.data || []);
+  allPromoRedemptions = redemptions.error ? [] : (redemptions.data || []);
 }
 
 // ── POPULATE DROPDOWNS ──
@@ -510,6 +542,7 @@ function renderOverview() {
   document.getElementById('opsDocuments').textContent = `${allDocuments.length} docs · ${allApplications.length} apps`;
   document.getElementById('opsPermits').textContent = `${foodRisk} risk flags`;
   document.getElementById('opsAudit').textContent = allAuditLogs.length ? `${allAuditLogs.length} recent logs` : 'Enabled';
+  renderAnalytics(totalBooths);
 
   // Recent events
   const tbody = document.getElementById('overviewEventsTable');
@@ -542,6 +575,84 @@ function renderOverview() {
     <td>${statusBadge(b.status)}</td>
     <td class="td-mono">${fmtDate(b.created_at)}</td>
   </tr>`).join('');
+}
+
+function renderAnalytics(totalBooths) {
+  const paidBookings = allBookings.filter(b => ['paid','checked_in','confirmed','booked'].includes(b.status));
+  const paidGmv = paidBookings.reduce((sum, booking) => sum + Number(booking.booth_price || booking.total_amount || 0), 0);
+  const paidFee = paidBookings.reduce((sum, booking) => sum + Number(booking.platform_fee || 0), 0);
+  const activeSold = allBooths.filter(booth => ['reserved','booked','payment_pending','paid'].includes(booth.status)).length;
+  const sellThrough = totalBooths ? Math.round((activeSold / totalBooths) * 100) : 0;
+  const categoryStats = {};
+  allBooths.forEach(booth => {
+    const key = booth.category || 'Standard';
+    categoryStats[key] ||= { total: 0, sold: 0 };
+    categoryStats[key].total += 1;
+    if (['reserved','booked','payment_pending','paid'].includes(booth.status)) categoryStats[key].sold += 1;
+  });
+  const topType = Object.entries(categoryStats)
+    .map(([key, value]) => ({ key, pct: value.total ? Math.round((value.sold / value.total) * 100) : 0 }))
+    .sort((a, b) => b.pct - a.pct)[0];
+  const firstPaid = paidBookings.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+  const firstEvent = firstPaid ? allEvents.find(event => event.id === firstPaid.event_id) : null;
+  const firstSaleDays = firstPaid && firstEvent ? daysBetween(firstEvent.created_at, firstPaid.created_at) : null;
+  const soldOutEvent = allEvents.find(event => {
+    const booths = allBooths.filter(booth => booth.event_id === event.id);
+    return booths.length && booths.every(booth => booth.status !== 'available');
+  });
+  const soldOutDays = soldOutEvent ? daysBetween(soldOutEvent.created_at, latestBookingDateForEvent(soldOutEvent.id)) : null;
+  const views = allAnalyticsEvents.filter(item => item.event_type === 'event_viewed').length;
+  const paidOrPending = paidBookings.length + allBookings.filter(b => b.status === 'payment_pending').length;
+  const funnelText = views ? `${views} views · ${Math.round((paidOrPending / views) * 100)}% close` : `${paidOrPending} paid/pending`;
+
+  document.getElementById('analyticsGmv').textContent = formatMoney(paidGmv);
+  document.getElementById('analyticsFee').textContent = formatMoney(paidFee || paidGmv * 0.07);
+  document.getElementById('analyticsSellThrough').textContent = `${sellThrough}%`;
+  document.getElementById('analyticsWaitlist').textContent = `${allWaitlists.filter(item => ['active','notified'].includes(item.status)).length} active`;
+  document.getElementById('analyticsFirstSale').textContent = firstSaleDays === null ? '—' : `${firstSaleDays}d`;
+  document.getElementById('analyticsSoldOut').textContent = soldOutDays === null ? '—' : `${soldOutDays}d`;
+  document.getElementById('analyticsFunnel').textContent = funnelText;
+  document.getElementById('analyticsTopType').textContent = topType ? `${topType.key} ${topType.pct}%` : '—';
+  renderBookingsChart(paidBookings);
+}
+
+function renderBookingsChart(rows) {
+  const svg = document.getElementById('bookingsChart');
+  const days = [];
+  const now = new Date();
+  for (let i = 89; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - i);
+    const key = date.toISOString().slice(0, 10);
+    days.push({ key, count: 0 });
+  }
+  rows.forEach(row => {
+    const key = new Date(row.created_at).toISOString().slice(0, 10);
+    const item = days.find(day => day.key === key);
+    if (item) item.count += 1;
+  });
+  const max = Math.max(1, ...days.map(day => day.count));
+  const points = days.map((day, index) => {
+    const x = 24 + (index / 89) * 752;
+    const y = 104 - (day.count / max) * 78;
+    return `${x},${y}`;
+  }).join(' ');
+  svg.innerHTML = `<polyline points="${points}" fill="none" stroke="var(--amber)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline><line x1="24" y1="104" x2="776" y2="104" stroke="var(--border)" stroke-width="1"></line><text x="24" y="24" fill="var(--ink3)" font-family="JetBrains Mono" font-size="10">Bookings over time · last 90 days</text>`;
+}
+
+function daysBetween(start, end) {
+  if (!start || !end) return null;
+  return Math.max(0, Math.round((new Date(end) - new Date(start)) / 86400000));
+}
+
+function latestBookingDateForEvent(eventId) {
+  const rows = allBookings.filter(booking => booking.event_id === eventId);
+  if (!rows.length) return null;
+  return rows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0].created_at;
+}
+
+function formatMoney(value) {
+  return value >= 1000 ? `$${(value / 1000).toFixed(1)}k` : `$${Math.round(value)}`;
 }
 
 // ── RENDER EVENTS ──
@@ -755,7 +866,7 @@ function statusBadge(status) {
     published: 'badge-green', draft: 'badge-gray', cancelled: 'badge-red', completed: 'badge-amber',
     available: 'badge-green', hold: 'badge-yellow', reserved: 'badge-yellow', payment_started: 'badge-yellow', payment_pending: 'badge-red',
     booked: 'badge-red', maintenance: 'badge-gray',
-    pending: 'badge-yellow', confirmed: 'badge-amber', paid: 'badge-green', checked_in: 'badge-green', refunded: 'badge-gray', expired: 'badge-gray'
+    pending: 'badge-yellow', confirmed: 'badge-amber', paid: 'badge-green', checked_in: 'badge-green', refund_requested: 'badge-yellow', refunded: 'badge-gray', expired: 'badge-gray'
   };
   return `<span class="badge ${map[status] || 'badge-gray'}">${formatStatus(status)}</span>`;
 }

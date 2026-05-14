@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://ortjeciwbhxkptfyysda.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Organizer — VenueMap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ed;
+  --bg2:#edeae4;
+  --white:#fefcfa;
+  --ink:#1a1916;
+  --ink2:#4a4843;
+  --ink3:#9a9690;
+  --border:#d8d4cc;
+  --border2:#c8c4bc;
+  --amber:#d4620a;
+  --amber-light:#f07030;
+  --amber-bg:#fdf0e8;
+  --amber-border:#f0c8a8;
+  --green:#1a6b3c;
+  --green-bg:#e8f5ee;
+  --red:#c0392b;
+  --red-bg:#fde8e8;
+  --blue:#1d4ed8;
+  --blue-bg:#eff6ff;
+  --serif:'Instrument Serif',serif;
+  --sans:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;min-height:100vh;}
+nav{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;position:sticky;top:0;z-index:100;}
+.logo{font-size:16px;font-weight:800;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px;}
+.logo-mark{width:24px;height:24px;background:var(--amber);border-radius:6px;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;}
+.nav-spacer{flex:1;}
+.nav-link{font-size:12px;font-weight:700;color:var(--ink2);text-decoration:none;border:1px solid var(--border);border-radius:100px;padding:8px 14px;transition:all 0.15s;}
+.nav-link:hover{border-color:var(--border2);background:var(--bg2);color:var(--ink);}
+.shell{max-width:1280px;margin:0 auto;padding:32px 28px 80px;}
+.hero{position:relative;min-height:420px;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--white);display:flex;align-items:flex-end;margin-bottom:28px;}
+.hero-img{position:absolute;inset:0;background:var(--bg2);background-size:cover;background-position:center;opacity:0.88;}
+.hero-img::after{content:'';position:absolute;inset:0;background:rgba(26,25,22,0.55);}
+.hero-content{position:relative;color:white;padding:40px;max-width:760px;}
+.org-logo{width:72px;height:72px;border-radius:16px;border:1px solid var(--border);background:var(--white);object-fit:cover;margin-bottom:18px;}
+.eyebrow{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--amber);margin-bottom:12px;}
+h1{font-family:var(--serif);font-style:italic;font-size:clamp(42px,6vw,72px);line-height:1.05;font-weight:400;color:white;}
+.hero-copy{font-size:14px;line-height:1.8;color:var(--bg);max-width:640px;margin-top:16px;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:24px;}
+.stat-label{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
+.stat-num{font-family:var(--serif);font-style:italic;font-size:clamp(32px,6vw,56px);color:var(--amber);}
+.section{margin-top:28px;}
+.section-head{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px;}
+.section-title{font-family:var(--serif);font-style:italic;font-size:clamp(28px,4vw,48px);font-weight:400;}
+.section-copy{font-size:14px;color:var(--ink2);line-height:1.8;max-width:520px;}
+.event-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.event-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:24px;text-decoration:none;color:var(--ink);transition:all 0.2s;}
+.event-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,0.07);transform:translateY(-2px);}
+.event-title{font-family:var(--serif);font-style:italic;font-size:28px;line-height:1.1;margin-bottom:12px;}
+.event-meta{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:16px;}
+.event-desc{font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:18px;}
+.badge{display:inline-flex;border-radius:100px;padding:5px 11px;font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:var(--amber-bg);color:var(--amber);}
+.empty{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:48px;text-align:center;color:var(--ink2);}
+.skeleton{position:relative;overflow:hidden;background:var(--bg2);border-radius:20px;min-height:260px;border:1px solid var(--border);}
+.skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(254,252,250,0.7),transparent);animation:shimmer 1.2s infinite;}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+footer{border-top:1px solid var(--border);background:var(--white);padding:24px 28px;color:var(--ink3);font-size:12px;}
+.footer-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;gap:18px;}
+.footer-inner a{color:var(--ink2);text-decoration:none;font-weight:700;}
+@media(max-width:900px){.stats,.event-grid{grid-template-columns:1fr 1fr}.hero-content{padding:28px}.shell{padding:24px 20px 64px}}
+@media(max-width:768px){nav{padding:0 20px}.stats,.event-grid{grid-template-columns:1fr}.hero{min-height:520px}.section-head,.footer-inner{flex-direction:column;align-items:flex-start}.nav-link{display:none}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="vancouver_platform.html"><span class="logo-mark">V</span>VenueMap</a>
+  <div class="nav-spacer"></div>
+  <a class="nav-link" href="vendor.html">Vendor Dashboard</a>
+  <a class="nav-link" href="vancouver_platform.html">Browse Events</a>
+</nav>
+
+<main class="shell">
+  <section id="hero" class="hero skeleton"></section>
+  <section id="stats" class="stats"></section>
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Event history</div>
+        <div class="section-title">Events on VenueMap</div>
+      </div>
+      <p class="section-copy">Public organizer profiles turn every event into durable proof: inventory, attendance, sell-through, and vendor demand over time.</p>
+    </div>
+    <div id="eventGrid" class="event-grid"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div>© 2026 VenueMap. Built in Vancouver.</div>
+    <a href="privacy.html">Privacy</a>
+  </div>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const slug = new URLSearchParams(window.location.search).get('slug') || 'tcics';
+
+async function init() {
+  const { data: org, error } = await sb.from('organizations').select('*').eq('slug', slug).single();
+  if (error || !org) return renderMissing();
+  const { data: events } = await sb
+    .from('events')
+    .select('*, venues(name,location), booths(id,status,price,category)')
+    .eq('organization_id', org.id)
+    .order('start_date', { ascending: false });
+  renderOrg(org, events || []);
+}
+
+function renderOrg(org, events) {
+  document.title = `${org.name} — VenueMap`;
+  const live = events.filter(event => event.status === 'published' && (!event.end_date || new Date(event.end_date) >= new Date()));
+  const past = events.filter(event => event.end_date && new Date(event.end_date) < new Date());
+  const booths = events.flatMap(event => event.booths || []);
+  const booked = booths.filter(booth => ['booked','paid','payment_pending','reserved'].includes(booth.status)).length;
+  const banner = org.banner_url || '';
+  document.getElementById('hero').className = 'hero';
+  document.getElementById('hero').innerHTML = `
+    <div class="hero-img" style="${banner ? `background-image:url('${banner}')` : ''}"></div>
+    <div class="hero-content">
+      ${org.logo_url ? `<img class="org-logo" src="${org.logo_url}" alt="${org.name} logo">` : ''}
+      <div class="eyebrow">Organizer profile</div>
+      <h1>${org.name}</h1>
+      <p class="hero-copy">${org.description || 'A VenueMap organizer profile with live events, event history, and demand proof.'}</p>
+    </div>`;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-label">Live Events</div><div class="stat-num">${live.length}</div></div>
+    <div class="stat"><div class="stat-label">Past Events</div><div class="stat-num">${past.length}</div></div>
+    <div class="stat"><div class="stat-label">Booth Inventory</div><div class="stat-num">${booths.length}</div></div>
+    <div class="stat"><div class="stat-label">Demand Proof</div><div class="stat-num">${booked}</div></div>`;
+  document.getElementById('eventGrid').innerHTML = events.length ? events.map(renderEvent).join('') : '<div class="empty">No public events are linked to this organizer yet.</div>';
+}
+
+function renderEvent(event) {
+  const booths = event.booths || [];
+  const available = booths.filter(booth => booth.status === 'available').length;
+  const total = booths.length;
+  const href = event.status === 'published' ? `event.html?id=${event.id}` : '#';
+  return `<a class="event-card" href="${href}">
+    <div class="event-title">${event.name}</div>
+    <div class="event-meta">${formatDate(event.start_date)} · ${event.venues?.name || 'Venue pending'}</div>
+    <div class="event-desc">${event.description || 'Event details and booth inventory are managed through VenueMap.'}</div>
+    <span class="badge">${available} of ${total} booths open</span>
+  </a>`;
+}
+
+function renderMissing() {
+  document.getElementById('hero').className = 'empty';
+  document.getElementById('hero').innerHTML = '<div class="section-title">Organizer not found</div><p class="section-copy" style="margin:12px auto 0">This public organizer profile is not available yet.</p>';
+  document.getElementById('stats').innerHTML = '';
+  document.getElementById('eventGrid').innerHTML = '';
+}
+
+function formatDate(value) {
+  if (!value) return 'Date pending';
+  return new Date(value).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+init();
+</script>
+</body>
+</html>

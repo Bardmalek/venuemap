@@ -277,7 +277,7 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
 
       <!-- STEP 3: Hold Created -->
       <div id="modalStep3" style="display:none;">
-        <div style="text-align:center;padding:10px 0;">
+        <div id="holdCompletePanel" style="text-align:center;padding:10px 0;">
           <div class="flow-symbol">VM</div>
           <div style="font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:10px;">Booking Hold Created</div>
           <div style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:20px;">Your booth is held while payment is completed. PayPal can now be wired into this server-side booking record without changing the vendor flow.</div>
@@ -286,6 +286,22 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
             <div class="hold-note-title">City-grade recordkeeping</div>
             This hold has an expiry time, idempotency key, status history, audit trail, platform fee calculation, and document-review path.
           </div>
+        </div>
+        <div id="profileGatePanel" style="display:none;">
+          <div class="flow-symbol">INFO</div>
+          <div style="font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:10px;text-align:center;">Complete your profile to continue</div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:18px;text-align:center;">Your booth hold is saved. Finish the required Vendor Passport fields before payment confirmation.</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="gFirstName"></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="gLastName"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="gBizName"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="gEmail" type="email"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="gPhone"></div>
+          <div class="form-group"><label class="form-label">Business Type</label><select class="form-select" id="gBizType"><option value="">Select type...</option><option>Food & Beverage</option><option>Retail</option><option>Arts & Crafts</option><option>Services</option><option>Nonprofit</option></select></div>
+          <div class="form-group"><label class="form-label">Insurance Policy Number</label><input class="form-input" id="gInsurance"></div>
+          <div class="form-group"><label class="form-label">Health Permit Reference</label><input class="form-input" id="gPermit"></div>
+          <div class="form-group"><label class="form-label">Business License Number</label><input class="form-input" id="gLicense"></div>
         </div>
       </div>
     </div>
@@ -308,6 +324,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // Get event ID from URL
 const params  = new URLSearchParams(window.location.search);
 const eventId = params.get('id');
+const rebookCategory = params.get('category') || '';
 
 let currentEvent    = null;
 let allBooths       = [];
@@ -315,6 +332,7 @@ let selectedBooth   = null;
 let currentFilter   = 'all';
 let modalStep       = 1;
 let currentHold     = null;
+let profileGateOpen = false;
 
 // ── MAP ──
 const map = L.map('map', { center:[49.2308,  -123.0214], zoom: 17, zoomControl: true });
@@ -472,7 +490,7 @@ function renderBoothList() {
     : allBooths.filter(b => b.category === currentFilter);
 
   if (list.length === 0) {
-    el.innerHTML = `<div style="text-align:center;color:var(--ink3);font-size:12px;padding:30px 10px;">No booths match this filter.</div>`;
+    el.innerHTML = `<div style="text-align:center;color:var(--ink3);font-size:12px;padding:24px 10px;">No booths match this filter.</div>${renderWaitlistPanel()}`;
     return;
   }
 
@@ -489,6 +507,38 @@ function renderBoothList() {
       ${b.width_m && b.length_m ? `<div class="bi-size">${b.width_m}×${b.length_m} m</div>` : ''}
     </div>
   `).join('');
+  if (list.every(b => b.status !== 'available')) {
+    el.innerHTML += renderWaitlistPanel();
+  }
+}
+
+function renderWaitlistPanel() {
+  const category = currentFilter === 'all' || currentFilter === 'available' ? '' : currentFilter;
+  return `<div style="border:1px solid var(--amber-border);background:var(--amber-bg);border-radius:12px;padding:14px;margin-top:10px;">
+    <div style="font-family:var(--serif);font-size:22px;font-style:italic;margin-bottom:6px;">Join the waitlist</div>
+    <div style="font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:12px;">Get notified if a booth opens up for this event.</div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="waitEmail" type="email"></div>
+    <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="waitBiz"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="waitPhone"></div>
+    <button class="btn-primary" style="width:100%" onclick="joinWaitlist('${category}')">Join Waitlist</button>
+  </div>`;
+}
+
+async function joinWaitlist(category) {
+  const email = document.getElementById('waitEmail')?.value.trim().toLowerCase();
+  const businessName = document.getElementById('waitBiz')?.value.trim();
+  const phone = document.getElementById('waitPhone')?.value.trim();
+  if (!email || !businessName) return showToast('Required', 'Email and business name required');
+  const { error } = await sb.from('waitlists').insert({
+    event_id: eventId,
+    booth_category: category || null,
+    vendor_email: email,
+    business_name: businessName,
+    phone,
+    status: 'active',
+  });
+  if (error && !String(error.message).includes('duplicate')) return showToast('Error', error.message);
+  showToast('Waitlist', 'You are on the waitlist');
 }
 
 function selectBoothById(id) {
@@ -567,10 +617,26 @@ async function loadEvent() {
     .order('booth_ref');
 
   allBooths = booths || [];
+  applyRebookCategory();
   renderBoothList();
   updateNavSpots();
   subscribeToBooths();
   setTimeout(resizeOverlay, 100);
+}
+
+function applyRebookCategory() {
+  if (!rebookCategory) return;
+  const match = allBooths.find(booth =>
+    booth.status === 'available' &&
+    String(booth.category || '').toLowerCase() === rebookCategory.toLowerCase()
+  );
+  if (match) {
+    currentFilter = rebookCategory;
+    selectBooth(match);
+    showToast('Rebook', 'A matching booth type is selected for you');
+  } else {
+    showToast('Rebook', 'Choose a similar booth for this event');
+  }
 }
 
 function updateNavSpots() {
@@ -586,6 +652,7 @@ function openBookingModal() {
   if (!selectedBooth) return;
   modalStep = 1;
   updateModalStep();
+  applyVendorPrefill();
   document.getElementById('bsName').textContent   = selectedBooth.name;
   document.getElementById('bsDetail').textContent = `${selectedBooth.booth_ref} · ${selectedBooth.category} · ${currentEvent?.name}`;
   document.getElementById('bsPrice').textContent  = `$${Number(selectedBooth.price).toLocaleString()}`;
@@ -654,6 +721,8 @@ async function nextStep() {
       document.getElementById('orderTotal').textContent = `$${total.toLocaleString()}`;
 
       document.getElementById('bookingRef').textContent = `REF: VM-${booking.id.slice(0,8).toUpperCase()}`;
+      hydrateProfileGateFields();
+      profileGateOpen = !isProfileComplete();
       modalStep = 3;
       updateModalStep();
 
@@ -684,7 +753,11 @@ function updateModalStep() {
   });
   const foot = document.getElementById('modalFoot');
   if (modalStep === 3) {
-    foot.innerHTML = `<button class="btn-primary" onclick="closeBookingModal()" style="flex:1">Close</button>`;
+    document.getElementById('holdCompletePanel').style.display = profileGateOpen ? 'none' : 'block';
+    document.getElementById('profileGatePanel').style.display = profileGateOpen ? 'block' : 'none';
+    foot.innerHTML = profileGateOpen
+      ? `<button class="btn-primary" onclick="completeProfileAndContinue()" style="flex:1">Save Profile & Continue →</button>`
+      : `<a class="btn-primary" href="booking-confirmation.html?booking=${currentHold?.booking?.id || ''}" style="flex:1;text-align:center;text-decoration:none;">Open Confirmation</a>`;
   } else {
     foot.innerHTML = `<button class="btn-ghost" onclick="closeBookingModal()">Cancel</button><button class="btn-primary" id="modalNextBtn" onclick="nextStep()">${modalStep === 1 ? 'Continue →' : 'Confirm & Pay →'}</button>`;
   }
@@ -692,6 +765,76 @@ function updateModalStep() {
 
 function formatStatus(status) {
   return String(status || '').replaceAll('_', ' ');
+}
+
+function applyVendorPrefill() {
+  let prefill = {};
+  try {
+    prefill = JSON.parse(localStorage.getItem('venuemap_rebook_prefill') || localStorage.getItem('venuemap_vendor_passport') || '{}');
+  } catch (_) {
+    prefill = {};
+  }
+  const names = String(prefill.contact_name || '').split(' ');
+  if (prefill.business_name) document.getElementById('fBizName').value = prefill.business_name;
+  if (prefill.business_type) document.getElementById('fBizType').value = prefill.business_type;
+  if (prefill.contact_email) document.getElementById('fEmail').value = prefill.contact_email;
+  if (prefill.phone) document.getElementById('fPhone').value = prefill.phone;
+  if (names[0]) document.getElementById('fFirstName').value = names[0];
+  if (names.length > 1) document.getElementById('fLastName').value = names.slice(1).join(' ');
+}
+
+function getCheckoutProfile() {
+  const firstName = document.getElementById('gFirstName').value.trim() || document.getElementById('fFirstName').value.trim();
+  const lastName = document.getElementById('gLastName').value.trim() || document.getElementById('fLastName').value.trim();
+  return {
+    booking_id: currentHold?.booking?.id,
+    business_name: document.getElementById('gBizName').value.trim() || document.getElementById('fBizName').value.trim(),
+    business_type: document.getElementById('gBizType').value || document.getElementById('fBizType').value,
+    contact_name: `${firstName} ${lastName}`.trim(),
+    contact_email: document.getElementById('gEmail').value.trim() || document.getElementById('fEmail').value.trim(),
+    phone: document.getElementById('gPhone').value.trim() || document.getElementById('fPhone').value.trim(),
+    insurance_policy_number: document.getElementById('gInsurance').value.trim(),
+    health_permit_reference: document.getElementById('gPermit').value.trim(),
+    business_license_number: document.getElementById('gLicense').value.trim(),
+  };
+}
+
+function isProfileComplete() {
+  const profile = getCheckoutProfile();
+  return Boolean(profile.business_name && profile.business_type && profile.contact_name && profile.contact_email && profile.phone);
+}
+
+function hydrateProfileGateFields() {
+  document.getElementById('gFirstName').value = document.getElementById('fFirstName').value.trim();
+  document.getElementById('gLastName').value = document.getElementById('fLastName').value.trim();
+  document.getElementById('gBizName').value = document.getElementById('fBizName').value.trim();
+  document.getElementById('gEmail').value = document.getElementById('fEmail').value.trim();
+  document.getElementById('gPhone').value = document.getElementById('fPhone').value.trim();
+  document.getElementById('gBizType').value = document.getElementById('fBizType').value;
+}
+
+async function completeProfileAndContinue() {
+  const profile = getCheckoutProfile();
+  if (!isProfileComplete()) {
+    showToast('Required', 'Complete business name, type, contact name, email, and phone');
+    return;
+  }
+  const btn = document.querySelector('#modalFoot .btn-primary');
+  if (btn) btn.textContent = 'Saving...';
+  const response = await fetch(`${FUNCTIONS_URL}/complete-vendor-passport`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+    body: JSON.stringify(profile),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    showToast('Error', payload.error || 'Unable to complete profile');
+    if (btn) btn.textContent = 'Save Profile & Continue →';
+    return;
+  }
+  localStorage.setItem('venuemap_vendor_passport', JSON.stringify(profile));
+  profileGateOpen = false;
+  updateModalStep();
 }
 
 // ── TOAST ──

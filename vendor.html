@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://ortjeciwbhxkptfyysda.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Vendor Dashboard — VenueMap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ed;
+  --bg2:#edeae4;
+  --white:#fefcfa;
+  --ink:#1a1916;
+  --ink2:#4a4843;
+  --ink3:#9a9690;
+  --border:#d8d4cc;
+  --border2:#c8c4bc;
+  --amber:#d4620a;
+  --amber-light:#f07030;
+  --amber-bg:#fdf0e8;
+  --amber-border:#f0c8a8;
+  --green:#1a6b3c;
+  --green-bg:#e8f5ee;
+  --red:#c0392b;
+  --red-bg:#fde8e8;
+  --blue:#1d4ed8;
+  --blue-bg:#eff6ff;
+  --serif:'Instrument Serif',serif;
+  --sans:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;min-height:100vh;}
+nav{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;position:sticky;top:0;z-index:100;}
+.logo{font-size:16px;font-weight:800;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px;}
+.logo-mark{width:24px;height:24px;background:var(--amber);border-radius:6px;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;}
+.nav-pill{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);}
+.nav-spacer{flex:1;}
+.nav-link{font-size:12px;font-weight:700;color:var(--ink2);text-decoration:none;border:1px solid var(--border);border-radius:100px;padding:8px 14px;transition:all 0.15s;}
+.nav-link:hover{border-color:var(--border2);background:var(--bg2);color:var(--ink);}
+.nav-link.primary{background:var(--amber);border-color:var(--amber);color:white;}
+.nav-link.primary:hover{background:var(--amber-light);border-color:var(--amber-light);transform:translateY(-1px);}
+.shell{max-width:1280px;margin:0 auto;padding:40px 28px 64px;}
+.hero{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px;align-items:end;margin-bottom:28px;}
+.eyebrow{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--amber);margin-bottom:12px;}
+h1{font-family:var(--serif);font-style:italic;font-size:clamp(36px,6vw,72px);line-height:1.05;font-weight:400;letter-spacing:0;color:var(--ink);}
+.hero-copy{font-size:14px;line-height:1.8;color:var(--ink2);max-width:520px;margin-top:16px;}
+.status-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:24px;}
+.status-title{font-family:var(--serif);font-style:italic;font-size:26px;margin-bottom:8px;}
+.status-text{font-size:13px;color:var(--ink2);line-height:1.7;}
+.login-card{max-width:520px;background:var(--white);border:1px solid var(--border);border-radius:20px;padding:28px;margin:64px auto;}
+.login-title{font-family:var(--serif);font-style:italic;font-size:40px;line-height:1.05;margin-bottom:12px;}
+.login-copy{font-size:14px;color:var(--ink2);line-height:1.8;margin-bottom:24px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;transition:border-color 0.2s;}
+.form-textarea{min-height:92px;resize:vertical;line-height:1.6;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--amber);background:var(--white);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid var(--border);color:var(--ink2);padding:12px 22px;border-radius:100px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+.btn:hover{border-color:var(--border2);color:var(--ink);background:var(--bg2);transform:translateY(-1px);}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:white;}
+.btn.primary:hover{background:var(--amber-light);border-color:var(--amber-light);box-shadow:0 14px 36px rgba(212,98,10,0.5);}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:white;}
+.btn.dark:hover{background:var(--ink2);border-color:var(--ink2);}
+.grid{display:grid;grid-template-columns:1.35fr 0.65fr;gap:20px;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:24px;transition:all 0.2s;}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;}
+.section-title{font-family:var(--serif);font-style:italic;font-size:32px;font-weight:400;}
+.section-sub{font-size:12px;color:var(--ink3);margin-top:4px;}
+.tabs{display:flex;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:100px;padding:4px;}
+.tab{border:0;background:transparent;border-radius:100px;padding:8px 14px;font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;}
+.tab.active{background:var(--white);color:var(--amber);box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.booking-list{display:flex;flex-direction:column;gap:12px;}
+.booking-card{border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--white);transition:all 0.2s;}
+.booking-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,0.07);transform:translateY(-2px);}
+.booking-top{display:flex;justify-content:space-between;gap:14px;margin-bottom:12px;}
+.booking-event{font-family:var(--serif);font-style:italic;font-size:26px;line-height:1.1;}
+.booking-meta{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);margin-top:6px;}
+.badge{display:inline-flex;align-items:center;border-radius:100px;padding:4px 10px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);white-space:nowrap;}
+.badge.green{background:var(--green-bg);color:var(--green);}
+.badge.amber{background:var(--amber-bg);color:var(--amber);}
+.badge.red{background:var(--red-bg);color:var(--red);}
+.badge.gray{background:var(--bg2);color:var(--ink3);}
+.detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0;}
+.detail{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.detail-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;}
+.detail-value{font-size:13px;font-weight:700;color:var(--ink);}
+.booking-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.notice{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:16px;padding:16px;margin-bottom:16px;}
+.notice-title{font-weight:800;margin-bottom:6px;}
+.notice-copy{font-size:12px;color:var(--ink2);line-height:1.7;}
+.passport-complete{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--green-bg);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;}
+.meter{height:8px;background:var(--bg2);border-radius:100px;overflow:hidden;border:1px solid var(--border);margin-top:10px;}
+.meter-fill{height:100%;background:var(--amber);border-radius:100px;transition:width 0.3s;}
+.receipt-row{display:grid;grid-template-columns:1.2fr 0.7fr 0.5fr auto;gap:12px;align-items:center;border-top:1px solid var(--border);padding:12px 0;}
+.receipt-row:first-child{border-top:0;}
+.empty{border:1px solid var(--border);border-radius:20px;background:var(--white);padding:56px 24px;text-align:center;}
+.empty-title{font-family:var(--serif);font-style:italic;font-size:40px;margin-bottom:10px;}
+.empty-copy{font-size:14px;line-height:1.8;color:var(--ink2);margin-bottom:22px;}
+.skeleton{position:relative;overflow:hidden;background:var(--bg2);border-radius:16px;min-height:96px;border:1px solid var(--border);}
+.skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(254,252,250,0.7),transparent);animation:shimmer 1.2s infinite;}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:white;border-radius:100px;padding:10px 22px;font-size:12px;font-weight:700;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:1000;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+footer{border-top:1px solid var(--border);background:var(--white);padding:24px 28px;color:var(--ink3);font-size:12px;}
+.footer-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;gap:18px;}
+.footer-inner a{color:var(--ink2);text-decoration:none;font-weight:700;}
+.hidden{display:none!important;}
+@media(max-width:900px){.hero,.grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr 1fr}.receipt-row{grid-template-columns:1fr}.shell{padding:28px 20px 60px}nav{padding:0 20px}.nav-pill{display:none}}
+@media(max-width:768px){h1{font-size:clamp(36px,12vw,54px)}.form-grid,.detail-grid{grid-template-columns:1fr}.section-head,.booking-top,.footer-inner{flex-direction:column;align-items:flex-start}.tabs{width:100%;overflow:auto}.card{padding:20px}.login-card{margin:40px 20px}.nav-link:not(.primary){display:none}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="vancouver_platform.html"><span class="logo-mark">V</span>VenueMap</a>
+  <span class="nav-pill">Vendor Passport</span>
+  <div class="nav-spacer"></div>
+  <a class="nav-link" href="vancouver_platform.html">Browse Events</a>
+  <button class="nav-link primary hidden" id="signOutBtn" onclick="signOut()">Sign Out</button>
+</nav>
+
+<main id="loginView" class="login-card">
+  <div class="eyebrow">Vendor dashboard</div>
+  <div class="login-title">Your booths, receipts, and business info in one place.</div>
+  <p class="login-copy">Enter the same email you used to book. VenueMap will send a secure magic link so you can view your bookings without managing a password.</p>
+  <div class="form-group">
+    <label class="form-label" for="loginEmail">Email</label>
+    <input class="form-input" id="loginEmail" type="email" placeholder="you@business.com">
+  </div>
+  <button class="btn primary" onclick="sendOtp()">Send Magic Link</button>
+</main>
+
+<main id="appView" class="shell hidden">
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Unified vendor history</div>
+      <h1>Welcome back, <span id="vendorName">vendor</span>.</h1>
+      <p class="hero-copy">Track every VenueMap booking across organizers, keep your business profile current, download receipts, and rebook future events faster.</p>
+    </div>
+    <aside class="status-card">
+      <div class="status-title">Passport readiness</div>
+      <p class="status-text" id="passportSummary">Loading your saved business information.</p>
+      <div class="meter"><div class="meter-fill" id="passportMeter" style="width:0%"></div></div>
+    </aside>
+  </section>
+
+  <section class="grid">
+    <div>
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <div class="section-title">My bookings</div>
+            <div class="section-sub">Upcoming, past, pending, and paid booth records across every organizer.</div>
+          </div>
+          <div class="tabs">
+            <button class="tab active" id="tabUpcoming" onclick="setBookingTab('upcoming')">Upcoming</button>
+            <button class="tab" id="tabPast" onclick="setBookingTab('past')">Past</button>
+            <button class="tab" id="tabAll" onclick="setBookingTab('all')">All</button>
+          </div>
+        </div>
+        <div id="bookingList" class="booking-list">
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Receipt history</div>
+            <div class="section-sub">Receipts, contracts, and vendor packages attached to your bookings.</div>
+          </div>
+        </div>
+        <div id="receiptList">
+          <div class="skeleton"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card">
+        <div class="section-title">Vendor Passport</div>
+        <p class="section-sub" style="margin-bottom:18px">Saved business details make checkout faster and keep organizer records clean.</p>
+        <div id="passportGate" class="notice hidden">
+          <div class="notice-title">Complete your profile to continue</div>
+          <div class="notice-copy">Required fields are business name, business type, contact name, email, and phone.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pBusinessName">Business Name</label>
+          <input class="form-input" id="pBusinessName">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pBusinessType">Business Type</label>
+          <select class="form-select" id="pBusinessType">
+            <option value="">Select type</option>
+            <option>Food & Beverage</option>
+            <option>Retail</option>
+            <option>Arts & Crafts</option>
+            <option>Services</option>
+            <option>Nonprofit</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pContactName">Contact Name</label>
+          <input class="form-input" id="pContactName">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pEmail">Email</label>
+          <input class="form-input" id="pEmail" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pPhone">Phone</label>
+          <input class="form-input" id="pPhone">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pInsurance">Insurance Policy Number</label>
+          <input class="form-input" id="pInsurance">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pPermit">Health Permit Reference</label>
+          <input class="form-input" id="pPermit">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pLicense">Business License Number</label>
+          <input class="form-input" id="pLicense">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pNotes">Notes</label>
+          <textarea class="form-textarea" id="pNotes"></textarea>
+        </div>
+        <button class="btn primary" style="width:100%" onclick="savePassport()">Save Passport</button>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div class="footer-inner">
+    <div>© 2026 VenueMap. Built in Vancouver.</div>
+    <a href="privacy.html">Privacy</a>
+  </div>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser = null;
+let vendorEmail = '';
+let bookings = [];
+let futureEvents = [];
+let passport = null;
+let activeTab = 'upcoming';
+
+async function init() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return;
+  currentUser = data.session.user;
+  vendorEmail = (currentUser.email || '').toLowerCase();
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+  document.getElementById('signOutBtn').classList.remove('hidden');
+  document.getElementById('pEmail').value = vendorEmail;
+  await loadVendorData();
+}
+
+async function sendOtp() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  if (!email) return showToast('Enter your email first');
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href.split('#')[0] }
+  });
+  if (error) return showToast(error.message);
+  showToast('Magic link sent. Check your email.');
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.reload();
+}
+
+async function loadVendorData() {
+  showLoading();
+  const emailQuery = sb.from('bookings')
+    .select('*, events(id,name,start_date,end_date,organization_id,organizations(name,slug,logo_url),venues(name,location)), booths(id,booth_ref,name,category,price)')
+    .eq('contact_email', vendorEmail)
+    .order('created_at', { ascending: false });
+  const vendorQuery = sb.from('bookings')
+    .select('*, events(id,name,start_date,end_date,organization_id,organizations(name,slug,logo_url),venues(name,location)), booths(id,booth_ref,name,category,price)')
+    .eq('vendor_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  const passportQuery = sb.from('vendor_passports').select('*').eq('contact_email', vendorEmail).order('updated_at', { ascending: false }).limit(1);
+  const futureQuery = sb.from('events').select('id,name,start_date,organization_id,status').eq('status', 'published').gte('start_date', new Date().toISOString()).order('start_date', { ascending: true });
+
+  const [byEmail, byUser, passportResult, futureResult] = await Promise.all([emailQuery, vendorQuery, passportQuery, futureQuery]);
+  const merged = new Map();
+  [...(byEmail.data || []), ...(byUser.data || [])].forEach(booking => merged.set(booking.id, booking));
+  bookings = [...merged.values()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  passport = (passportResult.data || [])[0] || null;
+  futureEvents = futureResult.data || [];
+  fillPassport();
+  renderBookings();
+  renderReceipts();
+}
+
+function showLoading() {
+  document.getElementById('bookingList').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+  document.getElementById('receiptList').innerHTML = '<div class="skeleton"></div>';
+}
+
+function fillPassport() {
+  const firstBooking = bookings[0] || {};
+  document.getElementById('vendorName').textContent = passport?.contact_name || firstBooking.business_name || vendorEmail.split('@')[0];
+  document.getElementById('pBusinessName').value = passport?.business_name || firstBooking.business_name || '';
+  document.getElementById('pBusinessType').value = passport?.business_type || firstBooking.business_type || '';
+  document.getElementById('pContactName').value = passport?.contact_name || '';
+  document.getElementById('pPhone').value = passport?.phone || firstBooking.contact_phone || '';
+  document.getElementById('pInsurance').value = passport?.insurance_policy_number || '';
+  document.getElementById('pPermit').value = passport?.health_permit_reference || '';
+  document.getElementById('pLicense').value = passport?.business_license_number || '';
+  document.getElementById('pNotes').value = passport?.notes || '';
+  updatePassportReadiness();
+}
+
+function getPassportPayload() {
+  return {
+    contact_email: vendorEmail,
+    business_name: document.getElementById('pBusinessName').value.trim(),
+    business_type: document.getElementById('pBusinessType').value.trim(),
+    contact_name: document.getElementById('pContactName').value.trim(),
+    phone: document.getElementById('pPhone').value.trim(),
+    insurance_policy_number: document.getElementById('pInsurance').value.trim(),
+    health_permit_reference: document.getElementById('pPermit').value.trim(),
+    business_license_number: document.getElementById('pLicense').value.trim(),
+    notes: document.getElementById('pNotes').value.trim(),
+  };
+}
+
+function isPassportComplete(payload = getPassportPayload()) {
+  return Boolean(payload.business_name && payload.business_type && payload.contact_name && payload.contact_email && payload.phone);
+}
+
+function updatePassportReadiness() {
+  const payload = getPassportPayload();
+  const required = ['business_name', 'business_type', 'contact_name', 'contact_email', 'phone'];
+  const complete = required.filter(key => payload[key]).length;
+  const pct = Math.round((complete / required.length) * 100);
+  document.getElementById('passportMeter').style.width = `${pct}%`;
+  document.getElementById('passportSummary').textContent = pct === 100
+    ? 'Your Vendor Passport is complete. Future bookings can move faster.'
+    : `${complete} of ${required.length} required fields complete. Finish your passport before payment confirmation.`;
+  document.getElementById('passportGate').classList.toggle('hidden', pct === 100);
+}
+
+async function savePassport() {
+  const payload = getPassportPayload();
+  if (isPassportComplete(payload)) payload.profile_completed_at = new Date().toISOString();
+  const query = passport?.id
+    ? sb.from('vendor_passports').update(payload).eq('id', passport.id).select().single()
+    : sb.from('vendor_passports').insert(payload).select().single();
+  const { data, error } = await query;
+  if (error) return showToast(error.message);
+  passport = data;
+  localStorage.setItem('venuemap_vendor_passport', JSON.stringify(payload));
+  updatePassportReadiness();
+  showToast('Vendor Passport saved');
+}
+
+function setBookingTab(tab) {
+  activeTab = tab;
+  ['Upcoming', 'Past', 'All'].forEach(name => {
+    document.getElementById(`tab${name}`).classList.toggle('active', tab === name.toLowerCase());
+  });
+  renderBookings();
+}
+
+function bookingBucket(booking) {
+  const end = booking.events?.end_date || booking.events?.start_date;
+  if (!end) return 'upcoming';
+  return new Date(end) >= new Date() ? 'upcoming' : 'past';
+}
+
+function renderBookings() {
+  const list = document.getElementById('bookingList');
+  const filtered = bookings.filter(booking => activeTab === 'all' || bookingBucket(booking) === activeTab);
+  if (!bookings.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-title">No bookings yet</div><div class="empty-copy">Discover upcoming events across Metro Vancouver and book your first booth.</div><a class="btn primary" href="vancouver_platform.html#events">Browse Events</a></div>`;
+    return;
+  }
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-title">Nothing here yet</div><div class="empty-copy">Switch tabs to see the rest of your VenueMap history.</div></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(renderBookingCard).join('');
+}
+
+function renderBookingCard(booking) {
+  const event = booking.events || {};
+  const booth = booking.booths || {};
+  const future = findFutureEvent(booking);
+  const isPast = bookingBucket(booking) === 'past';
+  const receiptHref = booking.receipt_url || booking.contract_url || booking.vendor_package_url || '';
+  const canRefund = ['paid', 'checked_in', 'confirmed', 'booked'].includes(booking.status);
+  return `<article class="booking-card">
+    <div class="booking-top">
+      <div>
+        <div class="booking-event">${event.name || 'Untitled event'}</div>
+        <div class="booking-meta">${formatDate(event.start_date)} · ${event.venues?.name || 'Venue pending'}</div>
+      </div>
+      ${statusBadge(booking.status)}
+    </div>
+    <div class="detail-grid">
+      <div class="detail"><div class="detail-label">Booth</div><div class="detail-value">${booth.booth_ref || 'Pending'}</div></div>
+      <div class="detail"><div class="detail-label">Type</div><div class="detail-value">${booth.category || booking.business_type || 'Standard'}</div></div>
+      <div class="detail"><div class="detail-label">Amount</div><div class="detail-value">$${Number(booking.total_amount || 0).toLocaleString()}</div></div>
+      <div class="detail"><div class="detail-label">Organizer</div><div class="detail-value">${event.organizations?.name || 'VenueMap'}</div></div>
+    </div>
+    <div class="booking-actions">
+      <a class="btn" href="booking-confirmation.html?booking=${booking.id}">View Details</a>
+      ${receiptHref ? `<a class="btn" href="${receiptHref}" target="_blank" rel="noopener">Download Receipt</a>` : ''}
+      ${isPast && future ? `<button class="btn primary" onclick="rebook('${booking.id}')">Rebook</button>` : ''}
+      ${isPast && !future ? `<button class="btn" onclick="followOrganizer('${booking.id}')">Notify me when this organizer announces their next event</button>` : ''}
+      ${canRefund ? `<button class="btn" onclick="requestRefund('${booking.id}')">Request Refund</button>` : ''}
+    </div>
+  </article>`;
+}
+
+function renderReceipts() {
+  const rows = bookings.filter(booking => booking.receipt_url || booking.contract_url || booking.vendor_package_url || ['paid','checked_in','confirmed','booked'].includes(booking.status));
+  const el = document.getElementById('receiptList');
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty" style="padding:40px 20px"><div class="empty-title">No receipts yet</div><div class="empty-copy">Receipts will appear here after payment is confirmed.</div></div>`;
+    return;
+  }
+  el.innerHTML = rows.map(booking => {
+    const href = booking.receipt_url || booking.contract_url || booking.vendor_package_url || '';
+    return `<div class="receipt-row">
+      <div><strong>${booking.events?.name || 'Untitled event'}</strong><div class="booking-meta">${booking.booths?.booth_ref || 'Booth pending'}</div></div>
+      <div class="td-mono">${formatDate(booking.paid_at || booking.created_at)}</div>
+      <div class="td-mono">$${Number(booking.total_amount || 0).toLocaleString()}</div>
+      ${href ? `<a class="btn" href="${href}" target="_blank" rel="noopener">Download</a>` : `<span class="badge gray">Pending</span>`}
+    </div>`;
+  }).join('');
+}
+
+function findFutureEvent(booking) {
+  const orgId = booking.events?.organization_id;
+  if (!orgId) return null;
+  return futureEvents.find(event => event.organization_id === orgId && event.id !== booking.event_id) || null;
+}
+
+function rebook(bookingId) {
+  const booking = bookings.find(item => item.id === bookingId);
+  const event = findFutureEvent(booking);
+  if (!booking || !event) return;
+  const payload = getPassportPayload();
+  localStorage.setItem('venuemap_rebook_prefill', JSON.stringify({
+    ...payload,
+    source_booking_id: booking.id,
+    booth_category: booking.booths?.category || booking.business_type || '',
+  }));
+  window.location.href = `event.html?id=${event.id}&rebook=${booking.id}&category=${encodeURIComponent(booking.booths?.category || '')}`;
+}
+
+async function followOrganizer(bookingId) {
+  const booking = bookings.find(item => item.id === bookingId);
+  const organizationId = booking?.events?.organization_id;
+  if (!organizationId) return showToast('Organizer profile is not linked yet');
+  const { error } = await sb.from('organizer_followers').insert({
+    organization_id: organizationId,
+    event_id: booking.event_id,
+    vendor_email: vendorEmail,
+    business_name: getPassportPayload().business_name || booking.business_name || '',
+    booth_category: booking.booths?.category || booking.business_type || '',
+  });
+  if (error && !String(error.message).includes('duplicate')) return showToast(error.message);
+  showToast('You will be notified when the organizer announces a new event');
+}
+
+async function requestRefund(bookingId) {
+  const reason = window.prompt('Tell the organizer why you are requesting a refund.');
+  if (!reason || !reason.trim()) return;
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData.session?.access_token;
+  const response = await fetch(`${FUNCTIONS_URL}/request-booking-refund`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ booking_id: bookingId, reason: reason.trim() })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) return showToast(payload.error || 'Unable to request refund');
+  showToast('Refund request submitted');
+  await loadVendorData();
+}
+
+function statusBadge(status) {
+  const safe = formatStatus(status);
+  const type = ['paid','checked_in','confirmed','booked'].includes(status) ? 'green'
+    : ['payment_pending','payment_started','hold','pending','refund_requested'].includes(status) ? 'amber'
+    : ['cancelled','refunded','expired'].includes(status) ? 'red' : 'gray';
+  return `<span class="badge ${type}">${safe}</span>`;
+}
+
+function formatStatus(status) {
+  return String(status || 'unknown').replaceAll('_', ' ');
+}
+
+function formatDate(value) {
+  if (!value) return 'Date pending';
+  return new Date(value).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+document.addEventListener('input', event => {
+  if (event.target.closest('aside')) updatePassportReadiness();
+});
+
+init();
+</script>
+</body>
+</html>
