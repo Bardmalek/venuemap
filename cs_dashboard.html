@@ -10,6 +10,7 @@
 <title>VenueMap — CS Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="venuemap.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -172,6 +173,7 @@ tr:hover td{background:var(--bg2);}
   <a href="vancouver_platform.html" class="logo"><div class="logo-mark">V</div>VenueMap CS</a>
   <span class="nav-badge">INTERNAL</span>
   <div class="nav-right">
+    <span class="live-indicator amber" style="margin-right:4px;"><span class="live-dot amber"></span>Live</span>
     <span class="nav-user" id="navUser">—</span>
     <a href="dashboard.html" class="nav-btn">Organizer Dashboard</a>
     <button class="nav-btn" onclick="signOut()">Sign out</button>
@@ -957,11 +959,13 @@ function exportBookings() {
 // ── HELPERS ──
 function badge(status) {
   const map = {
-    published:'bg', draft:'bgr', cancelled:'br', completed:'ba',
-    available:'bg', hold:'by', reserved:'by', payment_started:'by', payment_pending:'br', booked:'br', maintenance:'bgr',
-    pending:'by', confirmed:'ba', paid:'bg', checked_in:'bg', refund_requested:'by', refunded:'bgr', expired:'bgr'
+    published: 'chip-available', draft: 'chip-expired', cancelled: 'chip-cancelled', completed: 'chip-confirmed',
+    available: 'chip-available', hold: 'chip-held', reserved: 'chip-held', payment_started: 'chip-payment-pending',
+    payment_pending: 'chip-payment-pending', booked: 'chip-booked', maintenance: 'chip-expired',
+    pending: 'chip-pending', confirmed: 'chip-confirmed', paid: 'chip-paid', checked_in: 'chip-checked-in',
+    refund_requested: 'chip-needs-review', refunded: 'chip-refunded', expired: 'chip-expired',
   };
-  return `<span class="badge ${map[status]||'bgr'}">${escapeHtml(formatStatus(status))}</span>`;
+  return `<span class="chip ${map[status] || 'chip-expired'}">${escapeHtml(formatStatus(status))}</span>`;
 }
 
 function formatStatus(status) {
@@ -969,8 +973,8 @@ function formatStatus(status) {
 }
 
 function roleBadge(role) {
-  const map = { vendor:'bgr', organizer:'ba', city_admin:'bg', super_admin:'br' };
-  return `<span class="badge ${map[role]||'bgr'}">${escapeHtml(String(role || ''))}</span>`;
+  const map = { vendor: 'chip-expired', organizer: 'chip-held', city_reviewer: 'chip-approved', venue_admin: 'chip-approved', platform_admin: 'chip-needs-review', city_admin: 'chip-approved', super_admin: 'chip-needs-review' };
+  return `<span class="chip ${map[role] || 'chip-expired'}">${escapeHtml(String(role || ''))}</span>`;
 }
 
 function fmtDate(d) {

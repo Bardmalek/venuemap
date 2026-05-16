@@ -10,6 +10,7 @@
 <title>Vendor Dashboard — VenueMap</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="venuemap.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -166,8 +167,8 @@ footer{border-top:1px solid var(--border);background:var(--white);padding:24px 2
           </div>
         </div>
         <div id="bookingList" class="booking-list">
-          <div class="skeleton"></div>
-          <div class="skeleton"></div>
+          <div class="skeleton-card"><div class="skeleton-cell h-title"></div><div class="skeleton-cell h-line"></div><div class="skeleton-cell h-line w-half"></div></div>
+          <div class="skeleton-card"><div class="skeleton-cell h-title"></div><div class="skeleton-cell h-line"></div><div class="skeleton-cell h-line w-third"></div></div>
         </div>
       </div>
 
@@ -179,7 +180,7 @@ footer{border-top:1px solid var(--border);background:var(--white);padding:24px 2
           </div>
         </div>
         <div id="receiptList">
-          <div class="skeleton"></div>
+          <div class="skeleton-card"><div class="skeleton-cell h-line"></div><div class="skeleton-cell h-line w-half"></div></div>
         </div>
       </div>
     </div>
@@ -404,11 +405,13 @@ function renderBookings() {
   const list = document.getElementById('bookingList');
   const filtered = bookings.filter(booking => activeTab === 'all' || bookingBucket(booking) === activeTab);
   if (!bookings.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-title">No bookings yet</div><div class="empty-copy">Discover upcoming events across Metro Vancouver and book your first booth.</div><a class="btn primary" href="vancouver_platform.html#events">Browse Events</a></div>`;
+    list.innerHTML = `<div class="vm-empty"><div class="vm-empty-glyph">No bookings</div><div class="vm-empty-title">Your booth history lives here</div><div class="vm-empty-copy">Discover upcoming events across Metro Vancouver and book your first booth.</div><a class="vm-empty-action" href="vancouver_platform.html#events">Browse open events</a></div>`;
+    const cta = document.getElementById('mobileCta');
+    if (cta) cta.style.display = 'flex';
     return;
   }
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-title">Nothing here yet</div><div class="empty-copy">Switch tabs to see the rest of your VenueMap history.</div></div>`;
+    list.innerHTML = `<div class="vm-empty"><div class="vm-empty-glyph">No results</div><div class="vm-empty-title">Nothing in this view</div><div class="vm-empty-copy">Switch to All to see your complete booking history across every event and organizer.</div></div>`;
     return;
   }
   list.innerHTML = filtered.map(renderBookingCard).join('');
@@ -449,7 +452,7 @@ function renderReceipts() {
   const rows = bookings.filter(booking => booking.receipt_url || booking.contract_url || booking.vendor_package_url || ['paid','checked_in','confirmed','booked'].includes(booking.status));
   const el = document.getElementById('receiptList');
   if (!rows.length) {
-    el.innerHTML = `<div class="empty" style="padding:40px 20px"><div class="empty-title">No receipts yet</div><div class="empty-copy">Receipts will appear here after payment is confirmed.</div></div>`;
+    el.innerHTML = `<div class="vm-empty" style="padding:40px 20px"><div class="vm-empty-glyph">No receipts</div><div class="vm-empty-title">No receipts yet</div><div class="vm-empty-copy">Receipts are generated after confirmed payment. Only organizers can view private vendor documents.</div></div>`;
     return;
   }
   el.innerHTML = rows.map(booking => {
@@ -458,7 +461,7 @@ function renderReceipts() {
       <div><strong>${escapeHtml(booking.events?.name || 'Untitled event')}</strong><div class="booking-meta">${escapeHtml(booking.booths?.booth_ref || 'Booth pending')}</div></div>
       <div class="td-mono">${escapeHtml(formatDate(booking.paid_at || booking.receipt_sent_at || booking.created_at))}</div>
       <div class="td-mono">$${Number(booking.total_amount || 0).toLocaleString()}</div>
-      ${href ? `<a class="btn" href="${safeUrl(href)}" target="_blank" rel="noopener">Download</a>` : `<span class="badge gray">Pending</span>`}
+      ${href ? `<a class="btn" href="${safeUrl(href)}" target="_blank" rel="noopener">Download</a>` : `<span class="chip chip-pending">Pending</span>`}
     </div>`;
   }).join('');
 }
@@ -514,11 +517,13 @@ async function requestRefund(bookingId) {
 }
 
 function statusBadge(status) {
-  const safe = formatStatus(status);
-  const type = ['paid','checked_in','confirmed','booked'].includes(status) ? 'green'
-    : ['payment_pending','payment_started','hold','pending','refund_requested'].includes(status) ? 'amber'
-    : ['cancelled','refunded','expired'].includes(status) ? 'red' : 'gray';
-  return `<span class="badge ${type}">${safe}</span>`;
+  const map = {
+    paid: 'chip-paid', checked_in: 'chip-checked-in', confirmed: 'chip-confirmed', booked: 'chip-booked',
+    payment_pending: 'chip-payment-pending', payment_started: 'chip-payment-pending',
+    hold: 'chip-held', pending: 'chip-pending', refund_requested: 'chip-needs-review',
+    cancelled: 'chip-cancelled', refunded: 'chip-refunded', expired: 'chip-expired',
+  };
+  return `<span class="chip ${map[status] || 'chip-expired'}">${escapeHtml(formatStatus(status))}</span>`;
 }
 
 function formatStatus(status) {
@@ -544,5 +549,11 @@ document.addEventListener('input', event => {
 
 init();
 </script>
+
+<!-- Mobile sticky action — shown only when logged in and no bookings are open -->
+<div class="mobile-sticky-action" id="mobileCta" style="display:none;">
+  <a class="btn-primary-mobile" href="vancouver_platform.html#events">Browse open booth events</a>
+  <div class="mobile-sticky-sub">Metro Vancouver · Updated live</div>
+</div>
 </body>
 </html>

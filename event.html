@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="venuemap.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -204,10 +205,19 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
       <button class="modal-x" onclick="closeBookingModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="steps">
-        <div class="step-dot active" id="sd1"></div>
-        <div class="step-dot" id="sd2"></div>
-        <div class="step-dot" id="sd3"></div>
+      <div class="booking-timeline" id="bookingTimeline">
+        <div class="timeline-step active" id="ts1">
+          <div class="timeline-dot"></div>
+          <div class="timeline-label">Details</div>
+        </div>
+        <div class="timeline-step" id="ts2">
+          <div class="timeline-dot"></div>
+          <div class="timeline-label">Review</div>
+        </div>
+        <div class="timeline-step" id="ts3">
+          <div class="timeline-dot"></div>
+          <div class="timeline-label">Hold</div>
+        </div>
       </div>
 
       <!-- STEP 1: Info -->
@@ -276,7 +286,10 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
             <span id="orderTotal" style="color:var(--amber);font-family:var(--serif);font-size:22px;font-style:italic;">$0</span>
           </div>
         </div>
-        <div class="trust-panel"><strong>Payment integrity:</strong> the final booth price, platform fee, status, and expiry are decided by the Edge Function, not by this page.</div>
+        <div class="trust-block" style="margin-top:14px;">
+          <div class="trust-line">Your booth is not marked sold until payment is verified.</div>
+          <div class="trust-line">The final price, fee, and expiry are calculated by the server.</div>
+        </div>
       </div>
 
       <!-- STEP 3: Hold Created -->
@@ -759,10 +772,12 @@ async function nextStep() {
 function updateModalStep() {
   [1,2,3].forEach(i => {
     document.getElementById(`modalStep${i}`).style.display = i === modalStep ? 'block' : 'none';
-    const dot = document.getElementById(`sd${i}`);
-    dot.classList.remove('active','done');
-    if (i === modalStep) dot.classList.add('active');
-    else if (i < modalStep) dot.classList.add('done');
+    const ts = document.getElementById(`ts${i}`);
+    if (ts) {
+      ts.classList.remove('active','done');
+      if (i === modalStep) ts.classList.add('active');
+      else if (i < modalStep) ts.classList.add('done');
+    }
   });
   const foot = document.getElementById('modalFoot');
   if (modalStep === 3) {

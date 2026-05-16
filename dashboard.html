@@ -10,6 +10,7 @@
 <title>VenueMap — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="venuemap.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -60,12 +61,13 @@ nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);di
 
 /* STATS ROW */
 .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px;}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
-.stat-card-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);margin-bottom:8px;}
-.stat-card-num{font-family:var(--serif);font-size:36px;font-style:italic;color:var(--ink);}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,0.08);border-color:var(--border2);}
+.stat-card-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);font-family:var(--mono);margin-bottom:10px;}
+.stat-card-num{font-family:var(--serif);font-size:40px;font-style:italic;color:var(--ink);line-height:1;letter-spacing:-1px;}
 .stat-card-num.amber{color:var(--amber);}
 .stat-card-num.green{color:var(--green);}
-.stat-card-sub{font-size:11px;color:var(--ink3);margin-top:4px;}
+.stat-card-sub{font-size:11px;color:var(--ink3);margin-top:6px;}
 .ops-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px;}
 .ops-card{border:1px solid var(--border);background:var(--bg2);border-radius:10px;padding:15px;}
 .ops-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
@@ -85,6 +87,7 @@ th{padding:10px 16px;text-align:left;font-size:9px;font-weight:700;letter-spacin
 td{padding:11px 16px;font-size:12px;color:var(--ink2);border-bottom:1px solid var(--border);}
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:var(--bg2);}
+tr{transition:background .12s;cursor:default;}
 .td-name{font-weight:600;color:var(--ink);}
 .td-mono{font-family:var(--mono);font-size:11px;}
 
@@ -159,6 +162,7 @@ tr:hover td{background:var(--bg2);}
   <div class="nav-divider"></div>
   <span class="nav-title">Dashboard</span>
   <div class="nav-right">
+    <span class="live-indicator" style="margin-right:4px;"><span class="live-dot"></span>Live</span>
     <span class="nav-user" id="navUser">—</span>
     <a href="venue_map_editor.html" class="nav-btn">+ New Event</a>
     <button class="nav-btn" onclick="signOut()">Sign out</button>
@@ -555,7 +559,7 @@ function renderOverview() {
 
   // Recent events
   const tbody = document.getElementById('overviewEventsTable');
-  if (allEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No events yet. <a href="venue_map_editor.html" style="color:var(--amber)">Create one →</a></div></div></td></tr>`; return; }
+  if (allEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="vm-empty"><div class="vm-empty-glyph">No events</div><div class="vm-empty-title">Nothing published yet</div><div class="vm-empty-copy">Create your first event to start selling booth space across your venue.</div><a class="vm-empty-action" href="venue_map_editor.html">Create an event</a></div></td></tr>`; return; }
   tbody.innerHTML = allEvents.slice(0,5).map(e => {
     const booths    = e.booths || [];
     const available = booths.filter(b => b.status === 'available').length;
@@ -575,7 +579,7 @@ function renderOverview() {
 
   // Recent bookings
   const btbody = document.getElementById('overviewBookingsTable');
-  if (allBookings.length === 0) { btbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">No bookings yet</td></tr>`; return; }
+  if (allBookings.length === 0) { btbody.innerHTML = `<tr><td colspan="6"><div class="vm-empty-inline"><strong>No bookings yet</strong>Share your event page to start receiving applications.</div></td></tr>`; return; }
   btbody.innerHTML = allBookings.slice(0,5).map(b => `<tr>
     <td class="td-name">${escapeHtml(b.contact_email || '—')}</td>
     <td>${escapeHtml(b.events?.name || '—')}</td>
@@ -667,7 +671,7 @@ function formatMoney(value) {
 // ── RENDER EVENTS ──
 function renderEvents() {
   const tbody = document.getElementById('eventsTable');
-  if (filteredEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No events found.</div></div></td></tr>`; return; }
+  if (filteredEvents.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="vm-empty-inline"><strong>No events match this filter</strong>Try a broader search or create a new event.</div></td></tr>`; return; }
   tbody.innerHTML = filteredEvents.map(e => {
     const booths   = e.booths || [];
     const revenue  = booths.reduce((s, b) => s + Number(b.price), 0);
@@ -692,7 +696,7 @@ function renderEvents() {
 // ── RENDER BOOTHS ──
 function renderBooths() {
   const tbody = document.getElementById('boothsTable');
-  if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No booths found.</div></div></td></tr>`; return; }
+  if (filteredBooths.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="vm-empty-inline"><strong>No booths match</strong>Add booths to an event in the Map Editor.</div></td></tr>`; return; }
   tbody.innerHTML = filteredBooths.map(b => `<tr>
     <td class="td-mono">${escapeHtml(b.booth_ref)}</td>
     <td class="td-name">${escapeHtml(b.name)}</td>
@@ -712,7 +716,7 @@ function renderBooths() {
 // ── RENDER BOOKINGS ──
 function renderBookings() {
   const tbody = document.getElementById('bookingsTable');
-  if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No bookings yet.</div></div></td></tr>`; return; }
+  if (filteredBookings.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="vm-empty-inline"><strong>No bookings yet</strong>Share your event page to start receiving applications.</div></td></tr>`; return; }
   tbody.innerHTML = filteredBookings.map(b => `<tr>
     <td class="td-name">${escapeHtml(b.contact_email || '—')}</td>
     <td>${escapeHtml(b.business_name || '—')}</td>
@@ -731,7 +735,7 @@ function renderBookings() {
 // ── RENDER VENDORS ──
 function renderVendors() {
   const tbody = document.getElementById('vendorsTable');
-  if (allVendors.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">VM</div><div class="empty-state-text">No users yet.</div></div></td></tr>`; return; }
+  if (allVendors.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="vm-empty-inline"><strong>No vendors yet</strong>Vendors appear here after their first booking is created.</div></td></tr>`; return; }
   tbody.innerHTML = allVendors.map(v => `<tr>
     <td class="td-name">${escapeHtml(v.email)}</td>
     <td>${escapeHtml(v.full_name || '—')}</td>
@@ -748,7 +752,7 @@ function renderVendors() {
 // ── RENDER VENUES ──
 function renderVenues() {
   const tbody = document.getElementById('venuesTable');
-  if (allVenues.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No venues.</div></td></tr>`; return; }
+  if (allVenues.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="vm-empty-inline"><strong>No venues yet</strong>Add a venue to associate events and booth maps.</div></td></tr>`; return; }
   tbody.innerHTML = allVenues.map(v => {
     const eventCount = allEvents.filter(e => e.venue_id === v.id).length;
     return `<tr>
@@ -878,17 +882,18 @@ function filterBookingsByStatus(status) {
 // ── HELPERS ──
 function statusBadge(status) {
   const map = {
-    published: 'badge-green', draft: 'badge-gray', cancelled: 'badge-red', completed: 'badge-amber',
-    available: 'badge-green', hold: 'badge-yellow', reserved: 'badge-yellow', payment_started: 'badge-yellow', payment_pending: 'badge-red',
-    booked: 'badge-red', maintenance: 'badge-gray',
-    pending: 'badge-yellow', confirmed: 'badge-amber', paid: 'badge-green', checked_in: 'badge-green', refund_requested: 'badge-yellow', refunded: 'badge-gray', expired: 'badge-gray'
+    published: 'chip-available', draft: 'chip-expired', cancelled: 'chip-cancelled', completed: 'chip-confirmed',
+    available: 'chip-available', hold: 'chip-held', reserved: 'chip-held', payment_started: 'chip-payment-pending',
+    payment_pending: 'chip-payment-pending', booked: 'chip-booked', maintenance: 'chip-expired',
+    pending: 'chip-pending', confirmed: 'chip-confirmed', paid: 'chip-paid', checked_in: 'chip-checked-in',
+    refund_requested: 'chip-needs-review', refunded: 'chip-refunded', expired: 'chip-expired',
   };
-  return `<span class="badge ${map[status] || 'badge-gray'}">${escapeHtml(formatStatus(status))}</span>`;
+  return `<span class="chip ${map[status] || 'chip-expired'}">${escapeHtml(formatStatus(status))}</span>`;
 }
 
 function roleBadge(role) {
-  const map = { vendor: 'badge-gray', organizer: 'badge-amber', city_reviewer: 'badge-green', venue_admin: 'badge-green', platform_admin: 'badge-red', city_admin: 'badge-green', super_admin: 'badge-red' };
-  return `<span class="badge ${map[role] || 'badge-gray'}">${escapeHtml(formatStatus(role))}</span>`;
+  const map = { vendor: 'chip-expired', organizer: 'chip-held', city_reviewer: 'chip-approved', venue_admin: 'chip-approved', platform_admin: 'chip-needs-review', city_admin: 'chip-approved', super_admin: 'chip-needs-review' };
+  return `<span class="chip ${map[role] || 'chip-expired'}">${escapeHtml(formatStatus(role))}</span>`;
 }
 
 function eventMarker(event) {

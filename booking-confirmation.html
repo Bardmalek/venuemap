@@ -10,6 +10,7 @@
 <title>Booking Confirmation — VenueMap</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="venuemap.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -213,6 +214,15 @@ function renderBooking(booking) {
   document.getElementById('businessName').textContent = booking.business_name || 'Business pending';
   renderTimeline(booking);
   const receiptHref = booking.receipt_url || booking.contract_url || booking.vendor_package_url || '';
+  const paymentDone = ['paid','checked_in','confirmed','booked'].includes(booking.status);
+  if (paymentDone) {
+    const verifiedEl = document.createElement('div');
+    verifiedEl.className = 'payment-verified';
+    verifiedEl.style.marginBottom = '16px';
+    verifiedEl.innerHTML = `<div class="payment-verified-icon"></div><div><div class="payment-verified-title">Payment verified</div><div class="payment-verified-sub">This is an immutable payment record. Receipts are generated after confirmed payment.</div></div>`;
+    const actionsEl = document.getElementById('actions');
+    actionsEl.parentNode.insertBefore(verifiedEl, actionsEl);
+  }
   document.getElementById('actions').innerHTML = `
     <a class="btn" href="vendor.html">Open Dashboard</a>
     ${receiptHref ? `<a class="btn primary" href="${safeUrl(receiptHref)}" target="_blank" rel="noopener">Download Receipt</a>` : ''}
@@ -246,11 +256,14 @@ function renderError(message) {
 }
 
 function statusBadge(status) {
-  const type = ['paid','checked_in','confirmed','booked'].includes(status) ? 'green'
-    : ['payment_pending','payment_started','hold','pending','refund_requested'].includes(status) ? 'amber'
-    : ['cancelled','refunded','expired'].includes(status) ? 'red' : 'gray';
+  const map = {
+    paid: 'chip-paid', checked_in: 'chip-checked-in', confirmed: 'chip-confirmed', booked: 'chip-booked',
+    payment_pending: 'chip-payment-pending', payment_started: 'chip-payment-pending',
+    hold: 'chip-held', pending: 'chip-pending', refund_requested: 'chip-needs-review',
+    cancelled: 'chip-cancelled', refunded: 'chip-refunded', expired: 'chip-expired',
+  };
   const label = String(status || 'unknown').replaceAll('_', ' ').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return `<span class="badge ${type}">${label}</span>`;
+  return `<span class="chip ${map[status] || 'chip-expired'}">${label}</span>`;
 }
 
 function formatDate(value) {
