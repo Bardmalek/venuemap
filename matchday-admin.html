@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://ortjeciwbhxkptfyysda.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Matchday Admin — VenueMap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ed;
+  --bg2:#edeae4;
+  --white:#fefcfa;
+  --ink:#1a1916;
+  --ink2:#4a4843;
+  --ink3:#9a9690;
+  --border:#d8d4cc;
+  --border2:#c8c4bc;
+  --amber:#d4620a;
+  --amber-light:#f07030;
+  --amber-bg:#fdf0e8;
+  --amber-border:#f0c8a8;
+  --green:#1a6b3c;
+  --green-bg:#e8f5ee;
+  --red:#c0392b;
+  --red-bg:#fde8e8;
+  --blue:#1d4ed8;
+  --blue-bg:#eff6ff;
+  --serif:'Instrument Serif',serif;
+  --sans:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.6}
+nav{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;position:sticky;top:0;z-index:100}
+.logo{font-size:16px;font-weight:800;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo-mark{width:24px;height:24px;background:var(--amber);border-radius:6px;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.nav-title{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)}
+.nav-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.nav-btn{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:100px;padding:8px 14px;font-family:var(--sans);font-size:12px;font-weight:700;text-decoration:none;cursor:pointer;transition:all .15s}
+.nav-btn:hover{background:var(--bg2);border-color:var(--border2);color:var(--ink)}
+.nav-btn.primary{background:var(--amber);border-color:var(--amber);color:var(--white)}
+.nav-btn.primary:hover{background:var(--amber-light);border-color:var(--amber-light)}
+.wrap{max-width:1280px;margin:0 auto;padding:28px}
+.header{display:flex;justify-content:space-between;gap:28px;align-items:end;margin:26px 0 22px}
+.eyebrow{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
+h1{font-family:var(--serif);font-style:italic;font-size:clamp(38px,6vw,72px);line-height:1.05;font-weight:400}
+.header-copy{max-width:520px;color:var(--ink2);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px}
+.stat-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.stat-num{font-family:var(--serif);font-style:italic;font-size:42px;line-height:1;color:var(--amber)}
+.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:18px;align-items:start}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:18px}
+.panel-head{padding:17px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:16px}
+.panel-title{font-size:14px;font-weight:800}
+.panel-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.tabs{display:flex;gap:6px}
+.tab{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:100px;padding:7px 12px;font-family:var(--sans);font-size:11px;font-weight:800;cursor:pointer}
+.tab.active{background:var(--ink);border-color:var(--ink);color:var(--white)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--bg2);border-bottom:1px solid var(--border);text-align:left;padding:10px 14px;font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink3)}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--ink2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.name{font-weight:800;color:var(--ink)}
+.muted{color:var(--ink3);font-size:11px}
+.mono{font-family:var(--mono);font-size:10px}
+.badge{display:inline-flex;align-items:center;border-radius:100px;padding:3px 8px;font-size:10px;font-weight:800}
+.badge.pending,.badge.new,.badge.missing{background:var(--amber-bg);color:var(--amber)}
+.badge.approved,.badge.paid,.badge.won,.badge.checked_in,.badge.approved-doc{background:var(--green-bg);color:var(--green)}
+.badge.rejected,.badge.lost,.badge.cancelled{background:var(--red-bg);color:var(--red)}
+.badge.needs_info,.badge.contacted,.badge.proposal_sent,.badge.submitted{background:var(--blue-bg);color:var(--blue)}
+.badge.waitlisted,.badge.deposit_paid,.badge.full_payment_pending,.badge.archived,.badge.not_required{background:var(--bg2);color:var(--ink3)}
+.badge-stack{margin-top:5px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.action{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:6px;padding:5px 8px;font-family:var(--sans);font-size:10px;font-weight:800;cursor:pointer}
+.action:hover{background:var(--bg2);color:var(--ink);border-color:var(--border2)}
+.side-card{padding:18px;border-bottom:1px solid var(--border)}
+.side-card:last-child{border-bottom:0}
+.side-title{font-family:var(--serif);font-style:italic;font-size:24px;margin-bottom:8px}
+.risk-list{display:grid;gap:9px;margin-top:12px}
+.risk{border:1px solid var(--border);background:var(--bg);border-radius:10px;padding:10px}
+.risk strong{display:block;color:var(--ink);font-size:12px}
+.risk span{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
+.empty{padding:36px 20px;text-align:center;color:var(--ink3)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:var(--white);border-radius:100px;padding:10px 22px;font-size:12px;font-weight:700;opacity:0;z-index:400;transition:all .3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 14px 36px rgba(0,0,0,0.12)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{padding:34px 28px;color:var(--ink3);font-size:12px}
+footer a{color:var(--ink3)}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:768px){nav{padding:0 20px}.wrap{padding:20px}.header{display:block}.stats{grid-template-columns:1fr 1fr}.panel{overflow-x:auto}table{min-width:820px}.nav-title{display:none}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="vancouver_platform.html"><span class="logo-mark">V</span>VenueMap</a>
+  <span class="nav-title">Matchday Admin</span>
+  <div class="nav-right">
+    <a class="nav-btn" href="matchday.html">Public Page</a>
+    <button class="nav-btn" onclick="exportCSV()">Export CSV</button>
+    <button class="nav-btn primary" onclick="loadAll()">Refresh</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="header">
+    <div>
+      <div class="eyebrow">Vancouver Football Summer Pop-Up</div>
+      <h1>Application command center</h1>
+    </div>
+    <p class="header-copy">Review vendors, sponsor inquiries, RSVP demand, compliance risk, and booth-category pressure before payment links go out.</p>
+  </header>
+
+  <section class="stats">
+    <div class="stat"><div class="stat-label">Applications</div><div class="stat-num" id="statApplications">0</div></div>
+    <div class="stat"><div class="stat-label">Approved</div><div class="stat-num" id="statApproved">0</div></div>
+    <div class="stat"><div class="stat-label">Food Risk</div><div class="stat-num" id="statFood">0</div></div>
+    <div class="stat"><div class="stat-label">Sponsors</div><div class="stat-num" id="statSponsors">0</div></div>
+    <div class="stat"><div class="stat-label">RSVPs</div><div class="stat-num" id="statRsvps">0</div></div>
+    <div class="stat"><div class="stat-label">Potential</div><div class="stat-num" id="statPotential">$0</div></div>
+  </section>
+
+  <div class="grid">
+    <div>
+      <section class="panel">
+        <div class="panel-head">
+          <div><div class="panel-title">Vendor Applications</div><div class="panel-sub">Approve, waitlist, reject, or request more information.</div></div>
+          <div class="tabs">
+            <button class="tab active" onclick="setVendorFilter('',this)">All</button>
+            <button class="tab" onclick="setVendorFilter('pending',this)">Pending</button>
+            <button class="tab" onclick="setVendorFilter('approved',this)">Approved</button>
+            <button class="tab" onclick="setVendorFilter('needs_info',this)">Needs Info</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Vendor</th><th>Category</th><th>Setup</th><th>Compliance</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="vendorRows"><tr><td colspan="6"><div class="empty">Loading applications...</div></td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><div class="panel-title">Sponsor Inquiries</div><div class="panel-sub">Manual sales pipeline for sponsor packages.</div></div>
+        </div>
+        <table>
+          <thead><tr><th>Company</th><th>Package</th><th>Activation</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="sponsorRows"><tr><td colspan="5"><div class="empty">Loading sponsors...</div></td></tr></tbody>
+        </table>
+      </section>
+    </div>
+
+    <aside>
+      <section class="panel">
+        <div class="side-card">
+          <div class="side-title">Category Demand</div>
+          <div class="muted">Applications by preferred booth category.</div>
+          <div class="risk-list" id="categoryDemand"></div>
+        </div>
+        <div class="side-card">
+          <div class="side-title">Compliance Queue</div>
+          <div class="muted">Food, insurance, power, water, and flame flags.</div>
+          <div class="risk-list" id="complianceQueue"></div>
+        </div>
+        <div class="side-card">
+          <div class="side-title">RSVP Demand</div>
+          <div class="muted">Attendee and lead capture signal.</div>
+          <div class="risk-list" id="rsvpDemand"></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <div>© 2026 VenueMap. Public page data is separated from private vendor, sponsor, and compliance data by RLS. <a href="privacy.html">Privacy</a></div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const EVENT_SLUG = 'football-summer-pop-up';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let eventRecord = null;
+let categories = [];
+let applications = [];
+let sponsors = [];
+let rsvps = [];
+let vendorFilter = '';
+
+function escapeHtml(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function money(cents){return `$${Math.round(Number(cents || 0) / 100).toLocaleString()}`}
+function badge(value){const cls=String(value || '').replace(/_/g,'-');return `<span class="badge ${escapeHtml(value)}">${escapeHtml(String(value || 'new').replace(/_/g,' '))}</span>`}
+function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove('show'),2800)}
+
+async function requireAuth(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ window.location.href = 'dashboard.html'; return false; }
+  return true;
+}
+
+async function loadAll(){
+  if(!(await requireAuth())) return;
+  const { data: event } = await sb.from('events').select('id,name').eq('slug', EVENT_SLUG).single();
+  eventRecord = event;
+  if(!eventRecord){ showToast('Matchday event not found. Run the migration first.'); return; }
+  const [catRes, appRes, sponsorRes, rsvpRes] = await Promise.all([
+    sb.from('matchday_booth_categories').select('*').eq('event_id', eventRecord.id).order('sort_order'),
+    sb.from('matchday_vendor_applications').select('*, matchday_booth_categories(name,price_cents,deposit_cents)').eq('event_id', eventRecord.id).order('created_at', { ascending:false }),
+    sb.from('matchday_sponsor_inquiries').select('*').eq('event_id', eventRecord.id).order('created_at', { ascending:false }),
+    sb.from('matchday_rsvps').select('*').eq('event_id', eventRecord.id).order('created_at', { ascending:false })
+  ]);
+  categories = catRes.data || [];
+  applications = appRes.data || [];
+  sponsors = sponsorRes.data || [];
+  rsvps = rsvpRes.data || [];
+  render();
+}
+
+function render(){
+  const approved = applications.filter(a => ['approved','deposit_paid','full_payment_pending','paid','checked_in'].includes(a.application_status));
+  const foodRisk = applications.filter(a => a.health_docs_status === 'missing' || a.propane_or_flame || ['Food truck','Food tent','Dessert','Coffee/tea','Packaged snacks/drinks'].includes(a.vendor_type));
+  const potential = approved.reduce((sum,a)=>sum + Number(a.matchday_booth_categories?.price_cents || 0), 0);
+  document.getElementById('statApplications').textContent = applications.length;
+  document.getElementById('statApproved').textContent = approved.length;
+  document.getElementById('statFood').textContent = foodRisk.length;
+  document.getElementById('statSponsors').textContent = sponsors.length;
+  document.getElementById('statRsvps').textContent = rsvps.length;
+  document.getElementById('statPotential').textContent = money(potential);
+  renderApplications();
+  renderSponsors();
+  renderSidebars();
+}
+
+function renderApplications(){
+  const rows = vendorFilter ? applications.filter(a => a.application_status === vendorFilter) : applications;
+  const el = document.getElementById('vendorRows');
+  if(!rows.length){ el.innerHTML = '<tr><td colspan="6"><div class="empty">No applications in this view.</div></td></tr>'; return; }
+  el.innerHTML = rows.map(a => `
+    <tr>
+      <td><div class="name">${escapeHtml(a.business_name)}</div><div class="muted">${escapeHtml(a.contact_name)} · ${escapeHtml(a.email)}</div><div class="muted">${escapeHtml(a.phone || '')}</div></td>
+      <td><div class="name">${escapeHtml(a.matchday_booth_categories?.name || 'No preference')}</div><div class="muted">${escapeHtml(a.vendor_type)}</div></td>
+      <td><div>${escapeHtml(a.setup_size || 'Not set')}</div><div class="muted">${a.power_required ? 'Power ' : ''}${a.water_required ? 'Water ' : ''}${a.propane_or_flame ? 'Flame/propane' : ''}</div></td>
+      <td><div>${badge(a.health_docs_status)}</div><div class="badge-stack">${badge(a.insurance_status)}</div></td>
+      <td>${badge(a.application_status)}<div class="muted mono">${new Date(a.created_at).toLocaleDateString('en-CA')}</div></td>
+      <td><div class="actions">
+        <button class="action" onclick="updateApplication('${a.id}','approved')">Approve</button>
+        <button class="action" onclick="updateApplication('${a.id}','needs_info')">Need info</button>
+        <button class="action" onclick="updateApplication('${a.id}','waitlisted')">Waitlist</button>
+        <button class="action" onclick="updateApplication('${a.id}','rejected')">Reject</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function renderSponsors(){
+  const el = document.getElementById('sponsorRows');
+  if(!sponsors.length){ el.innerHTML = '<tr><td colspan="5"><div class="empty">No sponsor inquiries yet.</div></td></tr>'; return; }
+  el.innerHTML = sponsors.map(s => `
+    <tr>
+      <td><div class="name">${escapeHtml(s.company_name)}</div><div class="muted">${escapeHtml(s.contact_name)} · ${escapeHtml(s.email)}</div></td>
+      <td><div>${escapeHtml(s.package_interest || 'General')}</div><div class="muted">${s.needs_booth ? 'Needs booth' : 'No booth requested'} ${s.power_required ? '· power' : ''}</div></td>
+      <td>${escapeHtml(s.activation_idea || s.notes || 'No activation notes yet')}</td>
+      <td>${badge(s.status)}</td>
+      <td><div class="actions">
+        <button class="action" onclick="updateSponsor('${s.id}','contacted')">Contacted</button>
+        <button class="action" onclick="updateSponsor('${s.id}','proposal_sent')">Proposal</button>
+        <button class="action" onclick="updateSponsor('${s.id}','won')">Won</button>
+        <button class="action" onclick="updateSponsor('${s.id}','lost')">Lost</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function renderSidebars(){
+  const demand = categories.map(c => ({name:c.name,count:applications.filter(a=>a.booth_category_id === c.id).length,max:c.max_quantity || 0}));
+  document.getElementById('categoryDemand').innerHTML = demand.map(d => `<div class="risk"><strong>${escapeHtml(d.name)}</strong><span>${d.count} application${d.count === 1 ? '' : 's'}${d.max ? ` · ${d.max} planned spots` : ''}</span></div>`).join('') || '<div class="empty">No category demand yet.</div>';
+  const flagged = applications.filter(a => a.health_docs_status === 'missing' || a.insurance_status === 'missing' || a.propane_or_flame || a.power_required || a.water_required).slice(0,8);
+  document.getElementById('complianceQueue').innerHTML = flagged.map(a => `<div class="risk"><strong>${escapeHtml(a.business_name)}</strong><span>${escapeHtml(a.vendor_type)} · ${a.health_docs_status} health · ${a.insurance_status} insurance</span></div>`).join('') || '<div class="risk"><strong>Clean</strong><span>No open compliance flags yet.</span></div>';
+  const grouped = rsvps.reduce((acc,r)=>{acc[r.interest_type]=(acc[r.interest_type]||0)+1;return acc;},{});
+  document.getElementById('rsvpDemand').innerHTML = Object.keys(grouped).map(k => `<div class="risk"><strong>${escapeHtml(k.replace(/_/g,' '))}</strong><span>${grouped[k]} lead${grouped[k] === 1 ? '' : 's'}</span></div>`).join('') || '<div class="risk"><strong>No RSVPs yet</strong><span>Public lead capture is ready.</span></div>';
+}
+
+function setVendorFilter(status, button){
+  vendorFilter = status;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  button.classList.add('active');
+  renderApplications();
+}
+
+async function updateApplication(id,status){
+  const { error } = await sb.from('matchday_vendor_applications').update({ application_status: status }).eq('id', id);
+  if(error){ showToast(error.message); return; }
+  showToast(`Application marked ${status.replace(/_/g,' ')}`);
+  loadAll();
+}
+
+async function updateSponsor(id,status){
+  const { error } = await sb.from('matchday_sponsor_inquiries').update({ status }).eq('id', id);
+  if(error){ showToast(error.message); return; }
+  showToast(`Sponsor marked ${status.replace(/_/g,' ')}`);
+  loadAll();
+}
+
+function exportCSV(){
+  const rows = [['Type','Name','Contact','Email','Category/Package','Status','Created']];
+  applications.forEach(a => rows.push(['Vendor', a.business_name, a.contact_name, a.email, a.matchday_booth_categories?.name || '', a.application_status, a.created_at]));
+  sponsors.forEach(s => rows.push(['Sponsor', s.company_name, s.contact_name, s.email, s.package_interest || '', s.status, s.created_at]));
+  const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'venuemap-matchday-pipeline.csv';
+  link.click();
+}
+
+loadAll();
+</script>
+</body>
+</html>

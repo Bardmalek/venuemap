@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://ortjeciwbhxkptfyysda.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Vancouver Football Summer Pop-Up — VenueMap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ed;
+  --bg2:#edeae4;
+  --white:#fefcfa;
+  --ink:#1a1916;
+  --ink2:#4a4843;
+  --ink3:#9a9690;
+  --border:#d8d4cc;
+  --border2:#c8c4bc;
+  --amber:#d4620a;
+  --amber-light:#f07030;
+  --amber-bg:#fdf0e8;
+  --amber-border:#f0c8a8;
+  --green:#1a6b3c;
+  --green-bg:#e8f5ee;
+  --red:#c0392b;
+  --red-bg:#fde8e8;
+  --blue:#1d4ed8;
+  --blue-bg:#eff6ff;
+  --serif:'Instrument Serif',serif;
+  --sans:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.7;overflow-x:hidden}
+nav{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:18px;position:sticky;top:0;z-index:100}
+.logo{font-size:16px;font-weight:800;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo-mark{width:24px;height:24px;background:var(--amber);border-radius:6px;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.nav-links{display:flex;align-items:center;gap:6px;margin-left:auto}
+.nav-link{color:var(--ink2);text-decoration:none;font-size:12px;font-weight:700;padding:7px 12px;border-radius:100px;transition:all .15s}
+.nav-link:hover{background:var(--bg2);color:var(--ink)}
+.nav-cta{background:var(--amber);color:var(--white);text-decoration:none;font-size:12px;font-weight:800;padding:9px 16px;border-radius:100px;transition:all .15s}
+.nav-cta:hover{background:var(--amber-light);transform:translateY(-1px)}
+.hero{min-height:calc(100vh - 56px);padding:80px 28px;display:flex;align-items:center;background:var(--bg)}
+.hero-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1.08fr .92fr;gap:56px;align-items:center;width:100%}
+.eyebrow{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--amber);margin-bottom:18px}
+h1{font-family:var(--serif);font-style:italic;font-size:clamp(42px,7vw,86px);line-height:1.02;font-weight:400;margin-bottom:22px}
+.hero-copy{max-width:640px;font-size:16px;color:var(--ink2);line-height:1.85;margin-bottom:28px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px}
+.btn{border:0;border-radius:100px;padding:13px 24px;font-family:var(--sans);font-size:13px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--amber);color:var(--white)}
+.btn-primary:hover{background:var(--amber-light);transform:translateY(-1px)}
+.btn-dark{background:var(--ink);color:var(--white)}
+.btn-dark:hover{background:var(--ink2);transform:translateY(-1px)}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--ink2)}
+.btn-secondary:hover{border-color:var(--border2);background:var(--bg2);color:var(--ink)}
+.proof-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.proof{background:var(--white);padding:18px}
+.proof-num{font-family:var(--serif);font-style:italic;font-size:clamp(32px,5vw,48px);line-height:1;color:var(--amber)}
+.proof-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink3);margin-top:8px}
+.map-preview{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 14px 36px rgba(0,0,0,0.12)}
+.map-head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:16px}
+.map-title{font-family:var(--serif);font-style:italic;font-size:28px}
+.map-tag{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);background:var(--green-bg);border-radius:100px;padding:5px 10px;height:max-content}
+.map-grid{height:360px;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.map-grid::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:28px 28px;opacity:.6}
+.zone{position:absolute;border:1px solid var(--border2);background:var(--white);border-radius:8px;padding:8px;font-family:var(--mono);font-size:9px;font-weight:800;color:var(--ink2);letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.zone.sponsor{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.zone.food{background:var(--green-bg);color:var(--green)}
+.zone.dark{background:var(--ink);color:var(--white);border-color:var(--ink)}
+.zone-entry{left:7%;top:8%;width:28%;height:16%}
+.zone-drinks{left:40%;top:9%;width:22%;height:16%}
+.zone-checkin{left:68%;top:9%;width:24%;height:16%}
+.zone-food-a{left:9%;top:38%;width:20%;height:13%}
+.zone-food-b{left:9%;top:56%;width:20%;height:13%}
+.zone-games{left:36%;top:36%;width:28%;height:32%}
+.zone-merch{left:70%;top:36%;width:20%;height:13%}
+.zone-dessert{left:70%;top:56%;width:20%;height:13%}
+.zone-staff{left:16%;top:80%;width:68%;height:10%}
+.section{padding:88px 28px}
+.section.alt{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.section-inner{max-width:1280px;margin:0 auto}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:40px;margin-bottom:40px}
+.kicker{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--amber);margin-bottom:10px}
+h2{font-family:var(--serif);font-style:italic;font-size:clamp(32px,5vw,56px);line-height:1.08;font-weight:400}
+.section-desc{max-width:520px;color:var(--ink2);font-size:14px;line-height:1.8}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:24px;transition:all .2s}
+.card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,0.07)}
+.card-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:12px}
+.card-title{font-family:var(--serif);font-style:italic;font-size:28px;line-height:1.15;margin-bottom:10px}
+.card p{color:var(--ink2);font-size:13px;line-height:1.75}
+.price{font-family:var(--serif);font-style:italic;font-size:36px;color:var(--amber);line-height:1;margin:16px 0 8px}
+.meta{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:1.2px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.step{background:var(--white);padding:26px}
+.step-num{font-family:var(--serif);font-style:italic;font-size:44px;color:var(--amber-border);line-height:1;margin-bottom:10px}
+.step-title{font-size:14px;font-weight:800;margin-bottom:8px}
+.step-copy{font-size:12px;color:var(--ink2);line-height:1.7}
+.notice{background:var(--ink);color:var(--white);border-radius:20px;padding:30px;display:grid;grid-template-columns:1fr 1.2fr;gap:32px;align-items:start}
+.notice h2{color:var(--white)}
+.notice p,.notice li{color:var(--border);font-size:13px}
+.notice ul{display:grid;gap:9px;list-style:none}
+.notice li{border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:9px}
+.forms-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:26px}
+.form-title{font-family:var(--serif);font-style:italic;font-size:32px;margin-bottom:6px}
+.form-card.spaced{margin-top:18px}
+.form-sub{color:var(--ink2);font-size:13px;margin-bottom:22px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;transition:all .15s}
+.form-textarea{min-height:92px;resize:vertical}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--amber);background:var(--white)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--ink2);line-height:1.6;margin:14px 0 18px}
+.check input{margin-top:5px;accent-color:var(--amber)}
+.faq{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.faq-item{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:20px}
+.faq-q{font-weight:800;margin-bottom:8px}
+.faq-a{font-size:13px;color:var(--ink2);line-height:1.7}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:var(--white);border-radius:100px;padding:10px 22px;font-size:12px;font-weight:700;opacity:0;z-index:400;transition:all .3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 14px 36px rgba(0,0,0,0.12)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{background:var(--ink);color:var(--white);padding:34px 28px}
+.footer-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;gap:24px;align-items:center}
+.footer-copy,.footer-links a{font-size:12px;color:var(--ink3);text-decoration:none}
+.footer-links{display:flex;gap:16px}
+@media(max-width:900px){
+  nav{padding:0 20px}.nav-links{display:none}
+  .hero{padding:56px 20px}.hero-inner,.notice,.forms-grid{grid-template-columns:1fr}
+  .proof-strip,.cards,.flow,.faq{grid-template-columns:1fr}
+  .section{padding:64px 20px}.section-head{display:block}
+  .map-grid{height:300px}.form-row{grid-template-columns:1fr}
+  .footer-inner{display:block}.footer-links{margin-top:14px}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="vancouver_platform.html"><span class="logo-mark">V</span>VenueMap</a>
+  <div class="nav-links">
+    <a class="nav-link" href="#vendors">Vendors</a>
+    <a class="nav-link" href="#sponsors">Sponsors</a>
+    <a class="nav-link" href="#compliance">Compliance</a>
+    <a class="nav-link" href="matchday-admin.html">Admin</a>
+  </div>
+  <a class="nav-cta" href="#apply">Apply</a>
+</nav>
+
+<main>
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">Free-entry matchday marketplace</div>
+        <h1>Vancouver Football Summer Pop-Up</h1>
+        <p class="hero-copy">A private-property marketplace powered by VenueMap: food vendors, cold drinks, games, music, sponsor activations, and global football energy organized through a live booth map.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#apply">Apply as a Vendor</a>
+          <a class="btn btn-dark" href="#sponsors">Become a Sponsor</a>
+          <a class="btn btn-secondary" href="#rsvp">RSVP for Updates</a>
+        </div>
+        <div class="proof-strip">
+          <div class="proof"><div class="proof-num">Free</div><div class="proof-label">Attendee entry</div></div>
+          <div class="proof"><div class="proof-num">12-18</div><div class="proof-label">Launch booths</div></div>
+          <div class="proof"><div class="proof-num">$100</div><div class="proof-label">Priority deposit</div></div>
+          <div class="proof"><div class="proof-num">Map</div><div class="proof-label">Powered by VenueMap</div></div>
+        </div>
+      </div>
+      <div class="map-preview">
+        <div class="map-head">
+          <div>
+            <div class="map-title">Live Layout Preview</div>
+            <div class="meta">Sponsor zones, food rows, games, and vendor booths</div>
+          </div>
+          <div class="map-tag">Private site</div>
+        </div>
+        <div class="map-grid" aria-label="VenueMap booth layout preview">
+          <div class="zone sponsor zone-entry">Sponsor Entry</div>
+          <div class="zone dark zone-drinks">VenueMap Drinks</div>
+          <div class="zone zone-checkin">Check-in</div>
+          <div class="zone food zone-food-a">Food A</div>
+          <div class="zone food zone-food-b">Food B</div>
+          <div class="zone zone-games">Games + Photo Wall</div>
+          <div class="zone zone-merch">Merch</div>
+          <div class="zone zone-dessert">Dessert</div>
+          <div class="zone zone-staff">Load-in / Staff / Waste</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="section-inner">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Concept</div>
+          <h2>Not a watch party. A legal marketplace.</h2>
+        </div>
+        <p class="section-desc">The launch format avoids the messy parts: no public match screening, no FIFA marks, no counterfeit merch, no sidewalk vending, and no VenueMap-run alcohol. The result is a contained pop-up that can move fast and look serious.</p>
+      </div>
+      <div class="flow">
+        <div class="step"><div class="step-num">01</div><div class="step-title">Private property</div><div class="step-copy">The full footprint stays inside a venue, lot, plaza, or courtyard with written approval.</div></div>
+        <div class="step"><div class="step-num">02</div><div class="step-title">Curated vendors</div><div class="step-copy">Applications are reviewed for category fit, setup needs, food risk, documents, and sponsor conflicts.</div></div>
+        <div class="step"><div class="step-num">03</div><div class="step-title">Mapped booths</div><div class="step-copy">Booth categories, sponsor zones, and entry placements are managed through VenueMap.</div></div>
+        <div class="step"><div class="step-num">04</div><div class="step-title">Sponsor proof</div><div class="step-copy">Sponsors get visible placement, activation space, and on-map inventory instead of vague logo exposure.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="vendors">
+    <div class="section-inner">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Vendor categories</div>
+          <h2>Limited booths by complexity.</h2>
+        </div>
+        <p class="section-desc">Prices are planning ranges. Final placement and payment happen after approval, document review, and site confirmation.</p>
+      </div>
+      <div class="cards" id="categoryCards">
+        <div class="card"><div class="card-label">Loading</div><div class="card-title">Fetching categories</div><p>VenueMap is loading the live booth category list.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="sponsors">
+    <div class="section-inner">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Sponsors</div>
+          <h2>Fan engagement without the official-event risk.</h2>
+        </div>
+        <p class="section-desc">Sponsor packages are intentionally compact: entrance presence, game/photo-wall naming, map placement, booth space, and social content.</p>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="card-label">Community Partner</div><div class="card-title">Local visibility</div><p>Logo on site, social mention, and community support positioning.</p><div class="price">$750</div><div class="meta">Starter package</div></div>
+        <div class="card"><div class="card-label">Matchday Partner</div><div class="card-title">Booth + map placement</div><p>Logo, booth/table, map placement, and light content support.</p><div class="price">$1,500</div><div class="meta">Best fit</div></div>
+        <div class="card"><div class="card-label">Presenting Partner</div><div class="card-title">Top placement</div><p>Premium placement, sponsor booth, signage rights inside the site, and content bundle.</p><div class="price">$3,500+</div><div class="meta">Manual approval</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="compliance">
+    <div class="section-inner">
+      <div class="notice">
+        <div>
+          <div class="kicker">Compliance stance</div>
+          <h2>Built to be boring in the best way.</h2>
+        </div>
+        <ul>
+          <li>This event is independently organized and is not affiliated with, endorsed by, or connected to FIFA, the FIFA World Cup, or any official tournament organizer.</li>
+          <li>FIFA names, marks, logos, slogans, mascots, and protected event branding may not be used by vendors, sponsors, or organizers unless separately authorized.</li>
+          <li>No counterfeit merchandise is permitted. Vendors must sell legally sourced goods only.</li>
+          <li>Food vendors are responsible for required permits, health approvals, insurance, and safe operation.</li>
+          <li>Public match screening, alcohol service, street vending, and sidewalk signage are not part of the launch format unless separately approved.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="apply">
+    <div class="section-inner">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Apply</div>
+          <h2>Start the vendor or sponsor conversation.</h2>
+        </div>
+        <p class="section-desc">Applications go into the VenueMap admin queue. We review category mix, site fit, compliance needs, and sponsor conflicts before payment or final booth assignment.</p>
+      </div>
+      <div class="forms-grid">
+        <form class="form-card" id="vendorForm">
+          <div class="form-title">Vendor Application</div>
+          <p class="form-sub">Tell us what you sell, how you set up, and what documentation you already have.</p>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Business name</label><input class="form-input" name="business_name" required></div>
+            <div class="form-group"><label class="form-label">Contact person</label><input class="form-input" name="contact_name" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required></div>
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-input" name="phone"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Website</label><input class="form-input" name="website"></div>
+            <div class="form-group"><label class="form-label">Instagram</label><input class="form-input" name="instagram"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Vendor type</label><select class="form-select" name="vendor_type" required><option value="">Select</option><option>Food truck</option><option>Food tent</option><option>Packaged snacks/drinks</option><option>Dessert</option><option>Coffee/tea</option><option>Merch/craft</option><option>Game/activity</option><option>Other</option></select></div>
+            <div class="form-group"><label class="form-label">Preferred category</label><select class="form-select" name="booth_category_id" id="categorySelect"><option value="">No preference</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Setup size</label><select class="form-select" name="setup_size"><option>10x10</option><option>6x6</option><option>Food truck</option><option>Custom</option></select></div>
+            <div class="form-group"><label class="form-label">Preferred date</label><select class="form-select" name="preferred_date"><option>June 24, 2026</option><option>June 18, 2026</option><option>Either date</option></select></div>
+          </div>
+          <div class="form-group"><label class="form-label">Description of products</label><textarea class="form-textarea" name="product_description" required></textarea></div>
+          <div class="form-group"><label class="form-label">Menu / product list</label><textarea class="form-textarea" name="menu_or_products"></textarea></div>
+          <div class="form-row">
+            <label class="check"><input type="checkbox" name="power_required">Power needed</label>
+            <label class="check"><input type="checkbox" name="water_required">Water needed</label>
+          </div>
+          <label class="check"><input type="checkbox" name="propane_or_flame">Propane, open flame, grill, or cooking heat source</label>
+          <div class="form-group"><label class="form-label">Special notes</label><textarea class="form-textarea" name="notes"></textarea></div>
+          <label class="check"><input type="checkbox" name="agreement_accepted" required>I understand this event is not affiliated with FIFA or any official tournament organizer. I agree not to sell counterfeit goods or use protected FIFA marks, logos, slogans, or official tournament branding.</label>
+          <button class="btn btn-primary" type="submit">Submit Vendor Application</button>
+        </form>
+
+        <div>
+          <form class="form-card" id="sponsorForm">
+            <div class="form-title">Sponsor Inquiry</div>
+            <p class="form-sub">Tell us the package and activation style you are interested in.</p>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Company name</label><input class="form-input" name="company_name" required></div>
+              <div class="form-group"><label class="form-label">Contact person</label><input class="form-input" name="contact_name" required></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required></div>
+              <div class="form-group"><label class="form-label">Phone</label><input class="form-input" name="phone"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Website</label><input class="form-input" name="website"></div>
+              <div class="form-group"><label class="form-label">Package</label><select class="form-select" name="package_interest"><option>Community Partner</option><option>Matchday Partner</option><option>Game Zone Sponsor</option><option>Presenting Partner</option></select></div>
+            </div>
+            <div class="form-row">
+              <label class="check"><input type="checkbox" name="needs_booth">Needs booth/table</label>
+              <label class="check"><input type="checkbox" name="power_required">Needs power</label>
+            </div>
+            <div class="form-group"><label class="form-label">Activation idea</label><textarea class="form-textarea" name="activation_idea"></textarea></div>
+            <button class="btn btn-dark" type="submit">Submit Sponsor Inquiry</button>
+          </form>
+
+          <form class="form-card spaced" id="rsvpForm">
+            <div class="form-title" id="rsvp">RSVP for Updates</div>
+            <p class="form-sub">Free attendee updates, vendor announcements, and site confirmation.</p>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Name</label><input class="form-input" name="contact_name"></div>
+              <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required></div>
+            </div>
+            <div class="form-group"><label class="form-label">Interest</label><select class="form-select" name="interest_type"><option value="attendee">Attendee</option><option value="vendor">Vendor</option><option value="sponsor">Sponsor</option><option value="property_owner">Property owner</option><option value="media">Media</option></select></div>
+            <button class="btn btn-secondary" type="submit">Save RSVP</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-head">
+        <div>
+          <div class="kicker">FAQ</div>
+          <h2>Clear rules, less chaos.</h2>
+        </div>
+      </div>
+      <div class="faq">
+        <div class="faq-item"><div class="faq-q">Is entry free?</div><div class="faq-a">Yes. Entry is free for attendees. Vendors and sponsors pay for booth or activation space.</div></div>
+        <div class="faq-item"><div class="faq-q">Is this an official FIFA event?</div><div class="faq-a">No. This is an independently organized community marketplace and is not affiliated with FIFA or any official tournament organizer.</div></div>
+        <div class="faq-item"><div class="faq-q">Will matches be shown?</div><div class="faq-a">This event is designed as a food, games, and community marketplace. Public match screening is not part of the MVP unless separately licensed and approved.</div></div>
+        <div class="faq-item"><div class="faq-q">Can vendors sell jerseys?</div><div class="faq-a">Only legally sourced goods are allowed. Counterfeit merchandise and unauthorized use of protected marks, logos, or official branding are not permitted.</div></div>
+        <div class="faq-item"><div class="faq-q">Do food vendors need permits?</div><div class="faq-a">Food vendors are responsible for required health approvals, insurance, and safe setup. The organizer may request documents before approval.</div></div>
+        <div class="faq-item"><div class="faq-q">When do vendors pay?</div><div class="faq-a">Applications are reviewed first. Approved vendors receive a payment link or deposit instructions once the site and booth assignment are confirmed.</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-copy">© 2026 VenueMap. Matchday marketplaces powered by mapped booth inventory.</div>
+    <div class="footer-links"><a href="privacy.html">Privacy</a><a href="vancouver_platform.html">VenueMap</a><a href="matchday-admin.html">Admin</a></div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://ortjeciwbhxkptfyysda.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
+const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
+const EVENT_SLUG = 'football-summer-pop-up';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+function escapeHtml(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function money(cents){return `$${Math.round(Number(cents || 0) / 100).toLocaleString()}`}
+function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove('show'),3200)}
+function formPayload(form){const fd=new FormData(form);const body={event_slug:EVENT_SLUG};for(const [key,value] of fd.entries()) body[key]=value;form.querySelectorAll('input[type="checkbox"]').forEach(input=>body[input.name]=input.checked);if(body.preferred_date) body.preferred_dates=[body.preferred_date];return body}
+
+async function loadCategories(){
+  const { data: event } = await sb.from('events').select('id').eq('slug', EVENT_SLUG).single();
+  if(!event) return;
+  const { data } = await sb.from('matchday_booth_categories').select('*').eq('event_id', event.id).order('sort_order');
+  const categories = data || [];
+  document.getElementById('categoryCards').innerHTML = categories.map(cat => `
+    <div class="card">
+      <div class="card-label">${escapeHtml(cat.requires_health_docs ? 'Health docs likely' : 'Lower complexity')}</div>
+      <div class="card-title">${escapeHtml(cat.name)}</div>
+      <p>${escapeHtml(cat.description)}</p>
+      <div class="price">${money(cat.price_cents)}</div>
+      <div class="meta">${cat.deposit_cents ? `${money(cat.deposit_cents)} priority deposit` : 'Manual sponsor approval'}</div>
+    </div>
+  `).join('');
+  document.getElementById('categorySelect').innerHTML = '<option value="">No preference</option>' + categories.map(cat => `<option value="${escapeHtml(cat.id)}">${escapeHtml(cat.name)} · ${money(cat.price_cents)}</option>`).join('');
+}
+
+async function submitForm(form, endpoint, success){
+  const button = form.querySelector('button[type="submit"]');
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Sending...';
+  try{
+    const response = await fetch(`${FUNCTIONS_URL}/${endpoint}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(formPayload(form))
+    });
+    const payload = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(payload.error || 'Submission failed');
+    form.reset();
+    showToast(success);
+  }catch(error){
+    showToast(error.message || 'Something went wrong');
+  }finally{
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
+
+document.getElementById('vendorForm').addEventListener('submit', e => {e.preventDefault();submitForm(e.currentTarget,'submit-matchday-application','Application received. VenueMap will review it.');});
+document.getElementById('sponsorForm').addEventListener('submit', e => {e.preventDefault();submitForm(e.currentTarget,'submit-sponsor-inquiry','Sponsor inquiry received.');});
+document.getElementById('rsvpForm').addEventListener('submit', e => {e.preventDefault();submitForm(e.currentTarget,'submit-matchday-rsvp','RSVP saved.');});
+loadCategories();
+</script>
+</body>
+</html>

@@ -259,6 +259,7 @@ footer { background: var(--ink); color: var(--white); padding: 56px 48px 32px; }
   <div class="nav-center">
     <a href="#events" class="nav-pill active">Events</a>
     <a href="#how" class="nav-pill">How it works</a>
+    <a href="matchday.html" class="nav-pill">Matchday Pop-Up</a>
     <a href="vendor.html" class="nav-pill">Vendor Dashboard</a>
     <a href="venue_map_editor.html" class="nav-pill">For Organizers</a>
     <a href="org.html?slug=tcics" class="nav-pill">TCICS Profile</a>
@@ -757,6 +758,10 @@ function openEventPage(eventId, eventName) {
   // Tiregan 2026 has its own booking site
   if (eventName && eventName.toLowerCase().includes('tiregan')) {
     window.location.href = 'https://tcicsbooking.com/tiregan.html';
+    return;
+  }
+  if (eventName && eventName.toLowerCase().includes('football summer')) {
+    window.location.href = 'matchday.html';
     return;
   }
   window.location.href = `event.html?id=${eventId}`;
