@@ -10,97 +10,159 @@
 <title>Matchday Admin — VenueMap</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="venuemap.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f5f2ed;
-  --bg2:#edeae4;
-  --white:#fefcfa;
-  --ink:#1a1916;
-  --ink2:#4a4843;
-  --ink3:#9a9690;
-  --border:#d8d4cc;
-  --border2:#c8c4bc;
-  --amber:#d4620a;
-  --amber-light:#f07030;
-  --amber-bg:#fdf0e8;
-  --amber-border:#f0c8a8;
-  --green:#1a6b3c;
-  --green-bg:#e8f5ee;
-  --red:#c0392b;
-  --red-bg:#fde8e8;
-  --blue:#1d4ed8;
-  --blue-bg:#eff6ff;
-  --serif:'Instrument Serif',serif;
-  --sans:'Syne',sans-serif;
-  --mono:'JetBrains Mono',monospace;
+  --bg:#f5f2ed; --bg2:#edeae4; --white:#fefcfa;
+  --ink:#1a1916; --ink2:#4a4843; --ink3:#9a9690;
+  --border:#d8d4cc; --border2:#c8c4bc;
+  --amber:#d4620a; --amber-light:#f07030; --amber-bg:#fdf0e8; --amber-border:#f0c8a8;
+  --green:#1a6b3c; --green-bg:#e8f5ee;
+  --red:#c0392b; --red-bg:#fde8e8;
+  --blue:#1d4ed8; --blue-bg:#eff6ff;
+  --serif:'Instrument Serif',serif; --sans:'Syne',sans-serif; --mono:'JetBrains Mono',monospace;
 }
-html,body{min-height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.6}
-nav{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;position:sticky;top:0;z-index:100}
-.logo{font-size:16px;font-weight:800;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
-.logo-mark{width:24px;height:24px;background:var(--amber);border-radius:6px;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+
+/* ── FULL-SCREEN APP SHELL ───────────────────────────────────────────────── */
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.6;display:flex;flex-direction:column}
+
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+nav{height:52px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 20px;flex-shrink:0;z-index:100}
+.logo{font-size:15px;font-weight:800;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo-mark{width:22px;height:22px;background:var(--amber);border-radius:5px;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.nav-divider{width:1px;height:20px;background:var(--border)}
 .nav-title{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)}
-.nav-right{margin-left:auto;display:flex;gap:10px;align-items:center}
-.nav-btn{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:100px;padding:8px 14px;font-family:var(--sans);font-size:12px;font-weight:700;text-decoration:none;cursor:pointer;transition:all .15s}
+.nav-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.nav-btn{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:100px;padding:7px 14px;font-family:var(--sans);font-size:11px;font-weight:700;text-decoration:none;cursor:pointer;transition:all .15s;white-space:nowrap}
 .nav-btn:hover{background:var(--bg2);border-color:var(--border2);color:var(--ink)}
 .nav-btn.primary{background:var(--amber);border-color:var(--amber);color:var(--white)}
 .nav-btn.primary:hover{background:var(--amber-light);border-color:var(--amber-light)}
-.wrap{max-width:1280px;margin:0 auto;padding:28px}
-.header{display:flex;justify-content:space-between;gap:28px;align-items:end;margin:26px 0 22px}
-.eyebrow{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
-h1{font-family:var(--serif);font-style:italic;font-size:clamp(38px,6vw,72px);line-height:1.05;font-weight:400}
-.header-copy{max-width:520px;color:var(--ink2);font-size:13px}
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
-.stat{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px}
-.stat-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
-.stat-num{font-family:var(--serif);font-style:italic;font-size:42px;line-height:1;color:var(--amber)}
-.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:18px;align-items:start}
-.panel{background:var(--white);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:18px}
-.panel-head{padding:17px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:16px}
-.panel-title{font-size:14px;font-weight:800}
-.panel-sub{font-size:11px;color:var(--ink3);margin-top:2px}
-.tabs{display:flex;gap:6px}
-.tab{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:100px;padding:7px 12px;font-family:var(--sans);font-size:11px;font-weight:800;cursor:pointer}
-.tab.active{background:var(--ink);border-color:var(--ink);color:var(--white)}
+
+/* ── APP BODY ────────────────────────────────────────────────────────────── */
+.app{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────────────── */
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);background:var(--white);overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-event{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sidebar-event-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+.sidebar-event-name{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--ink);line-height:1.3}
+.sidebar-kpis{padding:14px 16px;border-bottom:1px solid var(--border);display:grid;gap:12px}
+.sidebar-kpi{}
+.sidebar-kpi-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+.sidebar-kpi-num{font-family:var(--serif);font-style:italic;font-size:38px;line-height:1;color:var(--amber)}
+.sidebar-kpi-num.green{color:var(--green)}
+.sidebar-kpi-num.sm{font-size:26px}
+.sidebar-kpi-num.ink{color:var(--ink)}
+.sidebar-nav{padding:10px 8px;flex:1}
+.sidebar-nav-label{font-family:var(--mono);font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);padding:8px 10px 6px;display:block}
+.sidebar-tab{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all .15s;margin-bottom:2px}
+.sidebar-tab:hover{background:var(--bg2);color:var(--ink)}
+.sidebar-tab.active{background:var(--ink);color:var(--white)}
+.sidebar-tab-count{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;background:rgba(0,0,0,.07);border-radius:100px;padding:1px 7px;color:var(--ink3)}
+.sidebar-tab.active .sidebar-tab-count{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
+
+/* ── MAIN CONTENT AREA ───────────────────────────────────────────────────── */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+
+/* ── FILTER ROW ──────────────────────────────────────────────────────────── */
+/* extends venuemap.css .filter-row */
+.filter-row{position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.filter-row-inner{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--white);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.filter-count{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink3);white-space:nowrap;padding:4px 10px}
+
+/* ── TABLE ───────────────────────────────────────────────────────────────── */
+.panel-wrap{flex:1;overflow:auto;padding:16px}
 table{width:100%;border-collapse:collapse}
-th{background:var(--bg2);border-bottom:1px solid var(--border);text-align:left;padding:10px 14px;font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink3)}
-td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--ink2);vertical-align:top}
+th{background:var(--bg2);border-bottom:1px solid var(--border);text-align:left;padding:9px 14px;font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink3);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--ink2);vertical-align:top}
 tr:last-child td{border-bottom:0}
-.name{font-weight:800;color:var(--ink)}
-.muted{color:var(--ink3);font-size:11px}
-.mono{font-family:var(--mono);font-size:10px}
-.badge{display:inline-flex;align-items:center;border-radius:100px;padding:3px 8px;font-size:10px;font-weight:800}
-.badge.pending,.badge.new,.badge.missing{background:var(--amber-bg);color:var(--amber)}
-.badge.approved,.badge.paid,.badge.won,.badge.checked_in,.badge.approved-doc{background:var(--green-bg);color:var(--green)}
-.badge.rejected,.badge.lost,.badge.cancelled{background:var(--red-bg);color:var(--red)}
-.badge.needs_info,.badge.contacted,.badge.proposal_sent,.badge.submitted{background:var(--blue-bg);color:var(--blue)}
-.badge.waitlisted,.badge.deposit_paid,.badge.full_payment_pending,.badge.archived,.badge.not_required{background:var(--bg2);color:var(--ink3)}
-.badge-stack{margin-top:5px}
-.actions{display:flex;gap:6px;flex-wrap:wrap}
-.action{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:6px;padding:5px 8px;font-family:var(--sans);font-size:10px;font-weight:800;cursor:pointer}
-.action:hover{background:var(--bg2);color:var(--ink);border-color:var(--border2)}
-.side-card{padding:18px;border-bottom:1px solid var(--border)}
-.side-card:last-child{border-bottom:0}
-.side-title{font-family:var(--serif);font-style:italic;font-size:24px;margin-bottom:8px}
-.risk-list{display:grid;gap:9px;margin-top:12px}
-.risk{border:1px solid var(--border);background:var(--bg);border-radius:10px;padding:10px}
-.risk strong{display:block;color:var(--ink);font-size:12px}
-.risk span{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
-.empty{padding:36px 20px;text-align:center;color:var(--ink3)}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:var(--white);border-radius:100px;padding:10px 22px;font-size:12px;font-weight:700;opacity:0;z-index:400;transition:all .3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 14px 36px rgba(0,0,0,0.12)}
+tr.app-row{cursor:pointer;transition:background .12s}
+tr.app-row:hover td{background:var(--bg2)}
+tr.app-row.selected td{background:var(--amber-bg)}
+.cell-name{font-weight:800;color:var(--ink);margin-bottom:2px}
+.cell-sub{font-size:11px;color:var(--ink3);line-height:1.5;margin-top:1px}
+.cell-mono{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.panel-card{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.panel-head-row{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--white)}
+.panel-head-title{font-size:13px;font-weight:800}
+.panel-head-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+
+/* ── INSPECTOR PANEL ─────────────────────────────────────────────────────── */
+.inspector-panel{width:300px;flex-shrink:0;border-left:1px solid var(--border);background:var(--white);overflow-y:auto;display:flex;flex-direction:column}
+.inspector-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;gap:0}
+.inspector-empty-glyph{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--border2);margin-bottom:16px}
+.inspector-empty-copy{font-size:12px;color:var(--ink3);line-height:1.75}
+.inspector-name{font-family:var(--serif);font-style:italic;font-size:22px;line-height:1.2;color:var(--ink)}
+.inspector-sub{font-size:11px;color:var(--ink3);margin-top:4px}
+.inspector-close{background:none;border:1px solid var(--border);border-radius:100px;padding:5px 10px;font-family:var(--mono);font-size:9px;font-weight:700;color:var(--ink3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.inspector-close:hover{border-color:var(--border2);color:var(--ink);background:var(--bg2)}
+.insp-actions{display:grid;gap:6px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.insp-action-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.insp-btn{border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:8px;padding:8px 10px;font-family:var(--sans);font-size:11px;font-weight:800;cursor:pointer;text-align:center;transition:all .15s;width:100%}
+.insp-btn:hover{background:var(--bg2);border-color:var(--border2);color:var(--ink)}
+.insp-btn.approve{border-color:rgba(26,107,60,.2);background:var(--green-bg);color:var(--green)}
+.insp-btn.approve:hover{background:var(--green);color:var(--white)}
+.insp-btn.reject{border-color:rgba(192,57,43,.2);background:var(--red-bg);color:var(--red)}
+.insp-btn.reject:hover{background:var(--red);color:var(--white)}
+.insp-btn.deposit{border-color:rgba(26,107,60,.2);background:var(--green-bg);color:var(--green)}
+.insp-btn.deposit:hover{background:var(--green);color:var(--white)}
+.insp-btn.paid-btn{background:var(--ink);border-color:var(--ink);color:var(--white)}
+.insp-btn.paid-btn:hover{background:var(--ink2)}
+.insp-notes-area{padding:14px 16px;border-bottom:1px solid var(--border)}
+.insp-notes-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+.insp-notes-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;resize:vertical;min-height:80px;transition:border-color .15s,box-shadow .15s}
+.insp-notes-input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(212,98,10,.08);background:var(--white)}
+.insp-notes-btn{margin-top:8px;border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:100px;padding:7px 14px;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.insp-notes-btn:hover{background:var(--bg2);border-color:var(--border2);color:var(--ink)}
+.flag-row{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:12px;color:var(--ink2);border-bottom:1px solid var(--border)}
+.flag-row:last-child{border-bottom:none}
+.flag-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:800;flex-shrink:0}
+.flag-icon.warn{background:var(--amber-bg);color:var(--amber)}
+.flag-icon.ok{background:var(--green-bg);color:var(--green)}
+
+/* views */
+.view{display:none;flex:1;flex-direction:column}
+.view.active{display:flex}
+
+/* compliance view */
+.compliance-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:16px}
+.compliance-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.compliance-card.flagged{border-color:var(--amber-border);background:var(--amber-bg)}
+.compliance-card-name{font-weight:800;font-size:13px;color:var(--ink);margin-bottom:4px}
+.compliance-card-type{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-bottom:10px}
+.compliance-flags{display:flex;flex-direction:column;gap:5px}
+.c-flag{font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.c-flag.bad{color:var(--red)}
+.c-flag.warn{color:var(--amber)}
+.c-flag::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.c-flag.bad::before{background:var(--red)}
+.c-flag.warn::before{background:var(--amber);animation:vm-blink 1.8s infinite}
+.c-flag.ok::before{background:var(--green)}
+
+/* rsvp view */
+.rsvp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px}
+.rsvp-stat{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px}
+.rsvp-stat-label{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+.rsvp-stat-num{font-family:var(--serif);font-style:italic;font-size:44px;line-height:1;color:var(--amber)}
+
+/* toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:var(--white);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:700;opacity:0;z-index:1000;transition:all .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 14px 36px rgba(0,0,0,.12);pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-footer{padding:34px 28px;color:var(--ink3);font-size:12px}
-footer a{color:var(--ink3)}
-@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}}
-@media(max-width:768px){nav{padding:0 20px}.wrap{padding:20px}.header{display:block}.stats{grid-template-columns:1fr 1fr}.panel{overflow-x:auto}table{min-width:820px}.nav-title{display:none}}
+
+@media(max-width:1050px){.inspector-panel{display:none}}
+@media(max-width:768px){.sidebar{display:none}.main{flex:1}}
 </style>
 </head>
 <body>
+
 <nav>
   <a class="logo" href="vancouver_platform.html"><span class="logo-mark">V</span>VenueMap</a>
+  <div class="nav-divider"></div>
   <span class="nav-title">Matchday Admin</span>
+  <span class="live-indicator amber" style="margin-left:4px"><span class="live-dot amber"></span>Live</span>
   <div class="nav-right">
     <a class="nav-btn" href="matchday.html">Public Page</a>
     <button class="nav-btn" onclick="exportCSV()">Export CSV</button>
@@ -108,78 +170,168 @@ footer a{color:var(--ink3)}
   </div>
 </nav>
 
-<div class="wrap">
-  <header class="header">
-    <div>
-      <div class="eyebrow">Vancouver Football Summer Pop-Up</div>
-      <h1>Application command center</h1>
+<div class="app">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-event">
+      <div class="sidebar-event-label">Event</div>
+      <div class="sidebar-event-name" id="sidebarEventName">Vancouver Football Summer Pop-Up</div>
     </div>
-    <p class="header-copy">Review vendors, sponsor inquiries, RSVP demand, compliance risk, and booth-category pressure before payment links go out.</p>
-  </header>
+    <div class="sidebar-kpis">
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">Applications</div>
+        <div class="sidebar-kpi-num" id="kpiApplications">—</div>
+      </div>
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">Approved</div>
+        <div class="sidebar-kpi-num green" id="kpiApproved">—</div>
+      </div>
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">Potential revenue</div>
+        <div class="sidebar-kpi-num sm ink" id="kpiRevenue">—</div>
+      </div>
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">Sponsors</div>
+        <div class="sidebar-kpi-num sm" id="kpiSponsors">—</div>
+      </div>
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">RSVPs</div>
+        <div class="sidebar-kpi-num sm" id="kpiRsvps">—</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav" aria-label="Admin views">
+      <span class="sidebar-nav-label">Views</span>
+      <button class="sidebar-tab active" data-view="applications" onclick="switchView('applications', this)">
+        Applications
+        <span class="sidebar-tab-count" id="tabCountApplications">0</span>
+      </button>
+      <button class="sidebar-tab" data-view="sponsors" onclick="switchView('sponsors', this)">
+        Sponsors
+        <span class="sidebar-tab-count" id="tabCountSponsors">0</span>
+      </button>
+      <button class="sidebar-tab" data-view="rsvps" onclick="switchView('rsvps', this)">
+        RSVPs
+        <span class="sidebar-tab-count" id="tabCountRsvps">0</span>
+      </button>
+      <button class="sidebar-tab" data-view="compliance" onclick="switchView('compliance', this)">
+        Compliance Flags
+        <span class="sidebar-tab-count" id="tabCountCompliance">0</span>
+      </button>
+    </nav>
+  </aside>
 
-  <section class="stats">
-    <div class="stat"><div class="stat-label">Applications</div><div class="stat-num" id="statApplications">0</div></div>
-    <div class="stat"><div class="stat-label">Approved</div><div class="stat-num" id="statApproved">0</div></div>
-    <div class="stat"><div class="stat-label">Food Risk</div><div class="stat-num" id="statFood">0</div></div>
-    <div class="stat"><div class="stat-label">Sponsors</div><div class="stat-num" id="statSponsors">0</div></div>
-    <div class="stat"><div class="stat-label">RSVPs</div><div class="stat-num" id="statRsvps">0</div></div>
-    <div class="stat"><div class="stat-label">Potential</div><div class="stat-num" id="statPotential">$0</div></div>
-  </section>
+  <!-- ── MAIN ────────────────────────────────────────────────────────────── -->
+  <div class="main">
 
-  <div class="grid">
-    <div>
-      <section class="panel">
-        <div class="panel-head">
-          <div><div class="panel-title">Vendor Applications</div><div class="panel-sub">Approve, waitlist, reject, or request more information.</div></div>
-          <div class="tabs">
-            <button class="tab active" onclick="setVendorFilter('',this)">All</button>
-            <button class="tab" onclick="setVendorFilter('pending',this)">Pending</button>
-            <button class="tab" onclick="setVendorFilter('approved',this)">Approved</button>
-            <button class="tab" onclick="setVendorFilter('needs_info',this)">Needs Info</button>
+    <!-- APPLICATIONS VIEW -->
+    <div class="view active" id="view-applications">
+      <div class="filter-row-inner">
+        <input class="filter-search" id="appSearch" placeholder="Search by name, email, vendor type..." oninput="renderApplications()" style="flex:1;min-width:180px">
+        <div class="filter-chip-row" id="statusChips">
+          <button class="filter-chip active" data-status="" onclick="setStatusFilter('', this)">All</button>
+          <button class="filter-chip" data-status="pending" onclick="setStatusFilter('pending', this)">Pending</button>
+          <button class="filter-chip" data-status="approved" onclick="setStatusFilter('approved', this)">Approved</button>
+          <button class="filter-chip" data-status="needs_info" onclick="setStatusFilter('needs_info', this)">Needs Info</button>
+          <button class="filter-chip" data-status="waitlisted" onclick="setStatusFilter('waitlisted', this)">Waitlisted</button>
+          <button class="filter-chip" data-status="deposit_paid" onclick="setStatusFilter('deposit_paid', this)">Deposit Paid</button>
+        </div>
+        <span class="filter-count" id="filterCount"></span>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-card">
+          <div class="panel-head-row">
+            <div>
+              <div class="panel-head-title">Vendor Applications</div>
+              <div class="panel-head-sub">Click any row to open the inspector panel.</div>
+            </div>
           </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Vendor</th>
+                <th>Category</th>
+                <th>Setup</th>
+                <th>Compliance</th>
+                <th>Status</th>
+                <th>Applied</th>
+              </tr>
+            </thead>
+            <tbody id="vendorRows">
+              <tr><td colspan="6"><div class="vm-empty-inline"><strong>Loading applications</strong>Connecting to VenueMap.</div></td></tr>
+            </tbody>
+          </table>
         </div>
-        <table>
-          <thead><tr><th>Vendor</th><th>Category</th><th>Setup</th><th>Compliance</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="vendorRows"><tr><td colspan="6"><div class="empty">Loading applications...</div></td></tr></tbody>
-        </table>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <div><div class="panel-title">Sponsor Inquiries</div><div class="panel-sub">Manual sales pipeline for sponsor packages.</div></div>
-        </div>
-        <table>
-          <thead><tr><th>Company</th><th>Package</th><th>Activation</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="sponsorRows"><tr><td colspan="5"><div class="empty">Loading sponsors...</div></td></tr></tbody>
-        </table>
-      </section>
+      </div>
     </div>
 
-    <aside>
-      <section class="panel">
-        <div class="side-card">
-          <div class="side-title">Category Demand</div>
-          <div class="muted">Applications by preferred booth category.</div>
-          <div class="risk-list" id="categoryDemand"></div>
+    <!-- SPONSORS VIEW -->
+    <div class="view" id="view-sponsors">
+      <div class="panel-wrap">
+        <div class="panel-card">
+          <div class="panel-head-row">
+            <div>
+              <div class="panel-head-title">Sponsor Inquiries</div>
+              <div class="panel-head-sub">Manual sales pipeline. Update status as you progress.</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Company</th><th>Package</th><th>Activation</th><th>Booth / Power</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="sponsorRows">
+              <tr><td colspan="6"><div class="vm-empty-inline"><strong>Loading sponsor inquiries</strong></div></td></tr>
+            </tbody>
+          </table>
         </div>
-        <div class="side-card">
-          <div class="side-title">Compliance Queue</div>
-          <div class="muted">Food, insurance, power, water, and flame flags.</div>
-          <div class="risk-list" id="complianceQueue"></div>
-        </div>
-        <div class="side-card">
-          <div class="side-title">RSVP Demand</div>
-          <div class="muted">Attendee and lead capture signal.</div>
-          <div class="risk-list" id="rsvpDemand"></div>
-        </div>
-      </section>
-    </aside>
-  </div>
-</div>
+      </div>
+    </div>
 
-<footer>
-  <div>© 2026 VenueMap. Public page data is separated from private vendor, sponsor, and compliance data by RLS. <a href="privacy.html">Privacy</a></div>
-</footer>
+    <!-- RSVPS VIEW -->
+    <div class="view" id="view-rsvps">
+      <div class="panel-wrap">
+        <div class="rsvp-grid" id="rsvpGrid">
+          <div class="vm-empty-inline" style="grid-column:1/-1"><strong>Loading RSVPs</strong></div>
+        </div>
+        <div class="panel-card" style="margin-top:0">
+          <div class="panel-head-row">
+            <div><div class="panel-head-title">RSVP List</div><div class="panel-head-sub">All attendee and lead capture entries.</div></div>
+          </div>
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Interest</th><th>Date</th></tr></thead>
+            <tbody id="rsvpRows"><tr><td colspan="4"><div class="vm-empty-inline"><strong>Loading RSVPs</strong></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE VIEW -->
+    <div class="view" id="view-compliance">
+      <div class="panel-wrap">
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:6px">Compliance Queue</div>
+          <p style="font-size:12px;color:var(--ink2);line-height:1.7">Applications with missing documents, propane/flame use, missing health permits, or missing insurance. Review and request information before approval.</p>
+        </div>
+        <div class="compliance-grid" id="complianceGrid">
+          <div class="vm-empty-inline" style="grid-column:1/-1"><strong>Loading compliance data</strong></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── INSPECTOR PANEL ──────────────────────────────────────────────────── -->
+  <div class="inspector-panel" id="inspectorPanel">
+    <div class="inspector-empty" id="inspectorEmpty">
+      <div class="inspector-empty-glyph">Inspector</div>
+      <div class="inspector-empty-copy">Select an application row to view full details, compliance flags, and take action.</div>
+    </div>
+    <div id="inspectorContent" style="display:none;flex-direction:column;flex:1">
+      <!-- populated by renderInspector() -->
+    </div>
+  </div>
+
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -188,136 +340,409 @@ const SUPABASE_URL = 'https://ortjeciwbhxkptfyysda.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydGplY2l3Ymh4a3B0Znl5c2RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTM3NTIsImV4cCI6MjA5MTAyOTc1Mn0.hp8Ari-0s_15c_PihEgbArFfQESW5vAfTLQoqIzxVss';
 const EVENT_SLUG = 'football-summer-pop-up';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
 let eventRecord = null;
 let categories = [];
 let applications = [];
 let sponsors = [];
 let rsvps = [];
-let vendorFilter = '';
+let statusFilter = '';
+let selectedAppId = null;
 
-function escapeHtml(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
-function money(cents){return `$${Math.round(Number(cents || 0) / 100).toLocaleString()}`}
-function badge(value){const cls=String(value || '').replace(/_/g,'-');return `<span class="badge ${escapeHtml(value)}">${escapeHtml(String(value || 'new').replace(/_/g,' '))}</span>`}
-function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove('show'),2800)}
+function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function money(cents) { return `$${Math.round(Number(cents || 0) / 100).toLocaleString()}`; }
+function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-CA') : '—'; }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
 
-async function requireAuth(){
-  const { data:{ session } } = await sb.auth.getSession();
-  if(!session){ window.location.href = 'dashboard.html'; return false; }
+const STATUS_CHIP = {
+  pending:              'chip-pending',
+  needs_info:           'chip-needs-review',
+  approved:             'chip-approved',
+  rejected:             'chip-cancelled',
+  waitlisted:           'chip-expired',
+  deposit_paid:         'chip-held',
+  full_payment_pending: 'chip-payment-pending',
+  paid:                 'chip-paid',
+  checked_in:           'chip-checked-in',
+  cancelled:            'chip-cancelled',
+  new:                  'chip-pending',
+  contacted:            'chip-approved',
+  proposal_sent:        'chip-needs-review',
+  won:                  'chip-paid',
+  lost:                 'chip-cancelled',
+  missing:              'chip-cancelled',
+  submitted:            'chip-held',
+  not_required:         'chip-expired',
+};
+
+function chip(value) {
+  const val = String(value || 'unknown');
+  const cls = STATUS_CHIP[val] || `chip-${val.replace(/_/g,'-')}`;
+  return `<span class="chip ${escapeHtml(cls)}">${escapeHtml(val.replace(/_/g,' '))}</span>`;
+}
+
+async function requireAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'dashboard.html'; return false; }
   return true;
 }
 
-async function loadAll(){
-  if(!(await requireAuth())) return;
+async function loadAll() {
+  if (!(await requireAuth())) return;
   const { data: event } = await sb.from('events').select('id,name').eq('slug', EVENT_SLUG).single();
   eventRecord = event;
-  if(!eventRecord){ showToast('Matchday event not found. Run the migration first.'); return; }
+  if (!eventRecord) { showToast('Matchday event not found. Run the migration first.'); return; }
+  document.getElementById('sidebarEventName').textContent = eventRecord.name;
   const [catRes, appRes, sponsorRes, rsvpRes] = await Promise.all([
     sb.from('matchday_booth_categories').select('*').eq('event_id', eventRecord.id).order('sort_order'),
-    sb.from('matchday_vendor_applications').select('*, matchday_booth_categories(name,price_cents,deposit_cents)').eq('event_id', eventRecord.id).order('created_at', { ascending:false }),
-    sb.from('matchday_sponsor_inquiries').select('*').eq('event_id', eventRecord.id).order('created_at', { ascending:false }),
-    sb.from('matchday_rsvps').select('*').eq('event_id', eventRecord.id).order('created_at', { ascending:false })
+    sb.from('matchday_vendor_applications').select('*, matchday_booth_categories(name,price_cents)').eq('event_id', eventRecord.id).order('created_at', { ascending: false }),
+    sb.from('matchday_sponsor_inquiries').select('*').eq('event_id', eventRecord.id).order('created_at', { ascending: false }),
+    sb.from('matchday_rsvps').select('*').eq('event_id', eventRecord.id).order('created_at', { ascending: false }),
   ]);
   categories = catRes.data || [];
   applications = appRes.data || [];
   sponsors = sponsorRes.data || [];
   rsvps = rsvpRes.data || [];
-  render();
+  renderAll();
 }
 
-function render(){
+function renderAll() {
   const approved = applications.filter(a => ['approved','deposit_paid','full_payment_pending','paid','checked_in'].includes(a.application_status));
-  const foodRisk = applications.filter(a => a.health_docs_status === 'missing' || a.propane_or_flame || ['Food truck','Food tent','Dessert','Coffee/tea','Packaged snacks/drinks'].includes(a.vendor_type));
-  const potential = approved.reduce((sum,a)=>sum + Number(a.matchday_booth_categories?.price_cents || 0), 0);
-  document.getElementById('statApplications').textContent = applications.length;
-  document.getElementById('statApproved').textContent = approved.length;
-  document.getElementById('statFood').textContent = foodRisk.length;
-  document.getElementById('statSponsors').textContent = sponsors.length;
-  document.getElementById('statRsvps').textContent = rsvps.length;
-  document.getElementById('statPotential').textContent = money(potential);
+  const potential = approved.reduce((s, a) => s + Number(a.matchday_booth_categories?.price_cents || 0), 0);
+  const complianceFlags = applications.filter(a => a.health_docs_status === 'missing' || a.insurance_status === 'missing' || a.propane_or_flame);
+
+  document.getElementById('kpiApplications').textContent = applications.length;
+  document.getElementById('kpiApproved').textContent = approved.length;
+  document.getElementById('kpiRevenue').textContent = money(potential);
+  document.getElementById('kpiSponsors').textContent = sponsors.length;
+  document.getElementById('kpiRsvps').textContent = rsvps.length;
+  document.getElementById('tabCountApplications').textContent = applications.length;
+  document.getElementById('tabCountSponsors').textContent = sponsors.length;
+  document.getElementById('tabCountRsvps').textContent = rsvps.length;
+  document.getElementById('tabCountCompliance').textContent = complianceFlags.length;
+
   renderApplications();
   renderSponsors();
-  renderSidebars();
+  renderRsvps();
+  renderCompliance();
 }
 
-function renderApplications(){
-  const rows = vendorFilter ? applications.filter(a => a.application_status === vendorFilter) : applications;
+function filteredApplications() {
+  const q = document.getElementById('appSearch')?.value.toLowerCase().trim() || '';
+  return applications.filter(a => {
+    const matchStatus = !statusFilter || a.application_status === statusFilter;
+    const matchSearch = !q ||
+      a.business_name.toLowerCase().includes(q) ||
+      a.contact_name.toLowerCase().includes(q) ||
+      a.email.toLowerCase().includes(q) ||
+      (a.vendor_type || '').toLowerCase().includes(q);
+    return matchStatus && matchSearch;
+  });
+}
+
+function renderApplications() {
+  const rows = filteredApplications();
   const el = document.getElementById('vendorRows');
-  if(!rows.length){ el.innerHTML = '<tr><td colspan="6"><div class="empty">No applications in this view.</div></td></tr>'; return; }
-  el.innerHTML = rows.map(a => `
-    <tr>
-      <td><div class="name">${escapeHtml(a.business_name)}</div><div class="muted">${escapeHtml(a.contact_name)} · ${escapeHtml(a.email)}</div><div class="muted">${escapeHtml(a.phone || '')}</div></td>
-      <td><div class="name">${escapeHtml(a.matchday_booth_categories?.name || 'No preference')}</div><div class="muted">${escapeHtml(a.vendor_type)}</div></td>
-      <td><div>${escapeHtml(a.setup_size || 'Not set')}</div><div class="muted">${a.power_required ? 'Power ' : ''}${a.water_required ? 'Water ' : ''}${a.propane_or_flame ? 'Flame/propane' : ''}</div></td>
-      <td><div>${badge(a.health_docs_status)}</div><div class="badge-stack">${badge(a.insurance_status)}</div></td>
-      <td>${badge(a.application_status)}<div class="muted mono">${new Date(a.created_at).toLocaleDateString('en-CA')}</div></td>
-      <td><div class="actions">
-        <button class="action" onclick="updateApplication('${a.id}','approved')">Approve</button>
-        <button class="action" onclick="updateApplication('${a.id}','needs_info')">Need info</button>
-        <button class="action" onclick="updateApplication('${a.id}','waitlisted')">Waitlist</button>
-        <button class="action" onclick="updateApplication('${a.id}','rejected')">Reject</button>
-      </div></td>
-    </tr>
-  `).join('');
+  document.getElementById('filterCount').textContent = `${rows.length} of ${applications.length}`;
+  if (!rows.length) {
+    el.innerHTML = '<tr><td colspan="6"><div class="vm-empty-inline"><strong>No results</strong>Try adjusting the search or filter.</div></td></tr>';
+    return;
+  }
+  el.innerHTML = rows.map(a => {
+    const isSelected = a.id === selectedAppId;
+    return `
+    <tr class="app-row${isSelected ? ' selected' : ''}" onclick="selectApp('${escapeHtml(a.id)}')">
+      <td>
+        <div class="cell-name">${escapeHtml(a.business_name)}</div>
+        <div class="cell-sub">${escapeHtml(a.contact_name)} · ${escapeHtml(a.email)}</div>
+        ${a.phone ? `<div class="cell-sub">${escapeHtml(a.phone)}</div>` : ''}
+      </td>
+      <td>
+        <div style="font-weight:700;color:var(--ink);font-size:12px">${escapeHtml(a.matchday_booth_categories?.name || 'No preference')}</div>
+        <div class="cell-sub">${escapeHtml(a.vendor_type || '')}</div>
+      </td>
+      <td>
+        <div style="font-size:12px">${escapeHtml(a.setup_size || 'Not set')}</div>
+        <div class="cell-sub">${[a.power_required && 'Power', a.water_required && 'Water', a.propane_or_flame && 'Flame'].filter(Boolean).join(' · ') || 'Standard'}</div>
+      </td>
+      <td>
+        ${chip(a.health_docs_status)}
+        <div style="margin-top:4px">${chip(a.insurance_status)}</div>
+      </td>
+      <td>${chip(a.application_status)}</td>
+      <td class="cell-mono">${fmtDate(a.created_at)}</td>
+    </tr>`;
+  }).join('');
 }
 
-function renderSponsors(){
+function renderSponsors() {
   const el = document.getElementById('sponsorRows');
-  if(!sponsors.length){ el.innerHTML = '<tr><td colspan="5"><div class="empty">No sponsor inquiries yet.</div></td></tr>'; return; }
+  if (!sponsors.length) {
+    el.innerHTML = '<tr><td colspan="6"><div class="vm-empty-inline"><strong>No sponsor inquiries yet</strong>Submissions from the public page will appear here.</div></td></tr>';
+    return;
+  }
   el.innerHTML = sponsors.map(s => `
     <tr>
-      <td><div class="name">${escapeHtml(s.company_name)}</div><div class="muted">${escapeHtml(s.contact_name)} · ${escapeHtml(s.email)}</div></td>
-      <td><div>${escapeHtml(s.package_interest || 'General')}</div><div class="muted">${s.needs_booth ? 'Needs booth' : 'No booth requested'} ${s.power_required ? '· power' : ''}</div></td>
-      <td>${escapeHtml(s.activation_idea || s.notes || 'No activation notes yet')}</td>
-      <td>${badge(s.status)}</td>
-      <td><div class="actions">
-        <button class="action" onclick="updateSponsor('${s.id}','contacted')">Contacted</button>
-        <button class="action" onclick="updateSponsor('${s.id}','proposal_sent')">Proposal</button>
-        <button class="action" onclick="updateSponsor('${s.id}','won')">Won</button>
-        <button class="action" onclick="updateSponsor('${s.id}','lost')">Lost</button>
-      </div></td>
+      <td>
+        <div class="cell-name">${escapeHtml(s.company_name)}</div>
+        <div class="cell-sub">${escapeHtml(s.contact_name)} · ${escapeHtml(s.email)}</div>
+      </td>
+      <td>
+        <div style="font-size:12px;font-weight:700;color:var(--ink)">${escapeHtml(s.package_interest || 'General')}</div>
+      </td>
+      <td style="max-width:180px;font-size:12px">${escapeHtml(s.activation_idea || '—')}</td>
+      <td>
+        ${s.needs_booth ? chip('booth') : ''}
+        ${s.power_required ? `<span style="font-size:11px;color:var(--ink3)">Power</span>` : '—'}
+      </td>
+      <td>${chip(s.status)}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="insp-btn" style="width:auto;padding:6px 10px" onclick="updateSponsor('${s.id}','contacted')">Contacted</button>
+          <button class="insp-btn" style="width:auto;padding:6px 10px" onclick="updateSponsor('${s.id}','proposal_sent')">Proposal</button>
+          <button class="insp-btn approve" style="width:auto;padding:6px 10px" onclick="updateSponsor('${s.id}','won')">Won</button>
+          <button class="insp-btn reject" style="width:auto;padding:6px 10px" onclick="updateSponsor('${s.id}','lost')">Lost</button>
+        </div>
+      </td>
     </tr>
   `).join('');
 }
 
-function renderSidebars(){
-  const demand = categories.map(c => ({name:c.name,count:applications.filter(a=>a.booth_category_id === c.id).length,max:c.max_quantity || 0}));
-  document.getElementById('categoryDemand').innerHTML = demand.map(d => `<div class="risk"><strong>${escapeHtml(d.name)}</strong><span>${d.count} application${d.count === 1 ? '' : 's'}${d.max ? ` · ${d.max} planned spots` : ''}</span></div>`).join('') || '<div class="empty">No category demand yet.</div>';
-  const flagged = applications.filter(a => a.health_docs_status === 'missing' || a.insurance_status === 'missing' || a.propane_or_flame || a.power_required || a.water_required).slice(0,8);
-  document.getElementById('complianceQueue').innerHTML = flagged.map(a => `<div class="risk"><strong>${escapeHtml(a.business_name)}</strong><span>${escapeHtml(a.vendor_type)} · ${a.health_docs_status} health · ${a.insurance_status} insurance</span></div>`).join('') || '<div class="risk"><strong>Clean</strong><span>No open compliance flags yet.</span></div>';
-  const grouped = rsvps.reduce((acc,r)=>{acc[r.interest_type]=(acc[r.interest_type]||0)+1;return acc;},{});
-  document.getElementById('rsvpDemand').innerHTML = Object.keys(grouped).map(k => `<div class="risk"><strong>${escapeHtml(k.replace(/_/g,' '))}</strong><span>${grouped[k]} lead${grouped[k] === 1 ? '' : 's'}</span></div>`).join('') || '<div class="risk"><strong>No RSVPs yet</strong><span>Public lead capture is ready.</span></div>';
+function renderRsvps() {
+  const grouped = rsvps.reduce((acc, r) => { acc[r.interest_type] = (acc[r.interest_type] || 0) + 1; return acc; }, {});
+  const gridEl = document.getElementById('rsvpGrid');
+  const entries = Object.entries(grouped);
+  if (!entries.length) {
+    gridEl.innerHTML = '<div class="vm-empty-inline" style="grid-column:1/-1"><strong>No RSVPs yet</strong>The public RSVP form is live and ready.</div>';
+  } else {
+    gridEl.innerHTML = entries.map(([k, n]) => `
+      <div class="rsvp-stat">
+        <div class="rsvp-stat-label">${escapeHtml(k.replace(/_/g,' '))}</div>
+        <div class="rsvp-stat-num">${n}</div>
+      </div>
+    `).join('');
+  }
+  const rowEl = document.getElementById('rsvpRows');
+  if (!rsvps.length) {
+    rowEl.innerHTML = '<tr><td colspan="4"><div class="vm-empty-inline"><strong>No RSVPs yet</strong></div></td></tr>';
+    return;
+  }
+  rowEl.innerHTML = rsvps.map(r => `
+    <tr>
+      <td style="font-weight:600;color:var(--ink)">${escapeHtml(r.contact_name || '—')}</td>
+      <td class="cell-mono" style="font-size:11px">${escapeHtml(r.email)}</td>
+      <td>${chip(r.interest_type || 'attendee')}</td>
+      <td class="cell-mono">${fmtDate(r.created_at)}</td>
+    </tr>
+  `).join('');
 }
 
-function setVendorFilter(status, button){
-  vendorFilter = status;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  button.classList.add('active');
+function renderCompliance() {
+  const flagged = applications.filter(a =>
+    a.health_docs_status === 'missing' || a.insurance_status === 'missing' || a.propane_or_flame
+  );
+  const el = document.getElementById('complianceGrid');
+  if (!flagged.length) {
+    el.innerHTML = '<div class="panel-card" style="padding:32px;text-align:center;grid-column:1/-1"><div class="vm-empty-inline" style="border:none;padding:0"><strong>No compliance flags</strong>All applications are clear. Flags appear when health docs, insurance, or propane use need attention.</div></div>';
+    return;
+  }
+  el.innerHTML = flagged.map(a => {
+    const flags = [];
+    if (a.propane_or_flame) flags.push('<div class="c-flag bad">Propane / open flame declared</div>');
+    if (a.health_docs_status === 'missing') flags.push('<div class="c-flag warn">Health permit not obtained</div>');
+    if (a.insurance_status === 'missing') flags.push('<div class="c-flag warn">Insurance not obtained</div>');
+    if (a.power_required) flags.push('<div class="c-flag ok">Power required — confirm availability</div>');
+    if (a.water_required) flags.push('<div class="c-flag ok">Water required — confirm availability</div>');
+    return `
+      <div class="compliance-card${a.propane_or_flame || a.health_docs_status === 'missing' ? ' flagged' : ''}">
+        <div class="compliance-card-name">${escapeHtml(a.business_name)}</div>
+        <div class="compliance-card-type">${escapeHtml(a.vendor_type || 'Unknown type')} · ${chip(a.application_status)}</div>
+        <div class="compliance-flags">${flags.join('')}</div>
+        <div style="margin-top:12px;display:flex;gap:6px">
+          <button class="insp-btn" style="width:auto;padding:6px 10px" onclick="updateApplication('${a.id}','needs_info')">Request info</button>
+          <button class="insp-btn approve" style="width:auto;padding:6px 10px" onclick="updateApplication('${a.id}','approved')">Approve</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectApp(id) {
+  selectedAppId = id;
+  renderApplications();
+  renderInspector();
+}
+
+function renderInspector() {
+  const app = applications.find(a => a.id === selectedAppId);
+  const emptyEl = document.getElementById('inspectorEmpty');
+  const contentEl = document.getElementById('inspectorContent');
+  if (!app) {
+    emptyEl.style.display = '';
+    contentEl.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  contentEl.style.display = 'flex';
+
+  const reqs = [
+    app.power_required && 'Power',
+    app.water_required && 'Water',
+    app.propane_or_flame && 'Propane/flame',
+  ].filter(Boolean).join(', ') || 'None declared';
+
+  contentEl.innerHTML = `
+    <div class="inspector-head" style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div>
+        <div class="inspector-name">${escapeHtml(app.business_name)}</div>
+        <div class="inspector-sub">${escapeHtml(app.contact_name)} · ${chip(app.application_status)}</div>
+      </div>
+      <button class="inspector-close" onclick="clearInspector()">Close</button>
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-title" style="margin-bottom:10px">Info</div>
+      <div class="inspector-kv">
+        <div class="inspector-row"><span class="inspector-key">Email</span><span class="inspector-val">${escapeHtml(app.email)}</span></div>
+        <div class="inspector-row"><span class="inspector-key">Phone</span><span class="inspector-val">${escapeHtml(app.phone || '—')}</span></div>
+        ${app.website ? `<div class="inspector-row"><span class="inspector-key">Website</span><span class="inspector-val">${escapeHtml(app.website)}</span></div>` : ''}
+        ${app.instagram ? `<div class="inspector-row"><span class="inspector-key">Instagram</span><span class="inspector-val">${escapeHtml(app.instagram)}</span></div>` : ''}
+        <div class="inspector-row"><span class="inspector-key">Applied</span><span class="inspector-val">${fmtDate(app.created_at)}</span></div>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-title" style="margin-bottom:10px">Booth &amp; Setup</div>
+      <div class="inspector-kv">
+        <div class="inspector-row"><span class="inspector-key">Vendor type</span><span class="inspector-val">${escapeHtml(app.vendor_type || '—')}</span></div>
+        <div class="inspector-row"><span class="inspector-key">Category</span><span class="inspector-val">${escapeHtml(app.matchday_booth_categories?.name || 'No preference')}</span></div>
+        <div class="inspector-row"><span class="inspector-key">Setup size</span><span class="inspector-val">${escapeHtml(app.setup_size || '—')}</span></div>
+        <div class="inspector-row"><span class="inspector-key">Requirements</span><span class="inspector-val">${escapeHtml(reqs)}</span></div>
+      </div>
+      ${app.product_description ? `<div style="margin-top:10px;font-size:12px;color:var(--ink2);line-height:1.7;background:var(--bg2);border-radius:8px;padding:10px 12px">${escapeHtml(app.product_description)}</div>` : ''}
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-title" style="margin-bottom:10px">Compliance</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="flag-row">
+          <div class="flag-icon ${app.health_docs_status === 'missing' ? 'warn' : 'ok'}">${app.health_docs_status === 'missing' ? '!' : '✓'}</div>
+          <div>
+            <div style="font-size:12px;font-weight:700">Health permit</div>
+            <div style="font-size:11px;color:var(--ink3)">${chip(app.health_docs_status)}</div>
+          </div>
+        </div>
+        <div class="flag-row">
+          <div class="flag-icon ${app.insurance_status === 'missing' ? 'warn' : 'ok'}">${app.insurance_status === 'missing' ? '!' : '✓'}</div>
+          <div>
+            <div style="font-size:12px;font-weight:700">Insurance</div>
+            <div style="font-size:11px;color:var(--ink3)">${chip(app.insurance_status)}</div>
+          </div>
+        </div>
+        ${app.propane_or_flame ? `<div class="flag-row" style="border-color:var(--amber-border);background:var(--amber-bg);border-radius:8px;padding:8px 10px"><div class="flag-icon warn">!</div><div><div style="font-size:12px;font-weight:700;color:var(--amber)">Propane or open flame declared</div><div style="font-size:11px;color:var(--ink3)">Requires documentation before approval</div></div></div>` : ''}
+      </div>
+    </div>
+
+    <div class="insp-actions">
+      <div class="inspector-title" style="margin-bottom:8px">Actions</div>
+      <div class="insp-action-row">
+        <button class="insp-btn approve" onclick="updateApplication('${app.id}','approved')">Approve</button>
+        <button class="insp-btn" onclick="updateApplication('${app.id}','needs_info')">Need Info</button>
+      </div>
+      <div class="insp-action-row">
+        <button class="insp-btn" onclick="updateApplication('${app.id}','waitlisted')">Waitlist</button>
+        <button class="insp-btn reject" onclick="updateApplication('${app.id}','rejected')">Reject</button>
+      </div>
+      <div class="insp-action-row">
+        <button class="insp-btn deposit" onclick="updateApplication('${app.id}','deposit_paid')">Deposit Paid</button>
+        <button class="insp-btn paid-btn" onclick="updateApplication('${app.id}','paid')">Mark Paid</button>
+      </div>
+    </div>
+
+    <div class="insp-notes-area">
+      <div class="insp-notes-label">Admin Notes</div>
+      <textarea class="insp-notes-input" id="adminNotesInput" placeholder="Internal notes — not visible to vendor...">${escapeHtml(app.admin_notes || '')}</textarea>
+      <button class="insp-notes-btn" onclick="saveAdminNotes('${app.id}')">Save Notes</button>
+    </div>
+
+    ${app.applicant_notes ? `
+    <div class="inspector-section">
+      <div class="inspector-title" style="margin-bottom:8px">Vendor Notes</div>
+      <div style="font-size:12px;color:var(--ink2);line-height:1.7;background:var(--bg2);border-radius:8px;padding:10px 12px">${escapeHtml(app.applicant_notes)}</div>
+    </div>` : ''}
+  `;
+}
+
+function clearInspector() {
+  selectedAppId = null;
+  renderApplications();
+  const emptyEl = document.getElementById('inspectorEmpty');
+  const contentEl = document.getElementById('inspectorContent');
+  emptyEl.style.display = '';
+  contentEl.style.display = 'none';
+}
+
+function setStatusFilter(status, btn) {
+  statusFilter = status;
+  document.querySelectorAll('#statusChips .filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
   renderApplications();
 }
 
-async function updateApplication(id,status){
-  const { error } = await sb.from('matchday_vendor_applications').update({ application_status: status }).eq('id', id);
-  if(error){ showToast(error.message); return; }
-  showToast(`Application marked ${status.replace(/_/g,' ')}`);
-  loadAll();
+function switchView(view, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`view-${view}`).classList.add('active');
+  btn.classList.add('active');
 }
 
-async function updateSponsor(id,status){
-  const { error } = await sb.from('matchday_sponsor_inquiries').update({ status }).eq('id', id);
-  if(error){ showToast(error.message); return; }
+async function updateApplication(id, status) {
+  const { error } = await sb.from('matchday_vendor_applications').update({ application_status: status, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { showToast(error.message); return; }
+  showToast(`Marked ${status.replace(/_/g,' ')}`);
+  await loadAll();
+  if (selectedAppId === id) renderInspector();
+}
+
+async function saveAdminNotes(id) {
+  const notes = document.getElementById('adminNotesInput')?.value || '';
+  const { error } = await sb.from('matchday_vendor_applications').update({ admin_notes: notes, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { showToast(error.message); return; }
+  const app = applications.find(a => a.id === id);
+  if (app) app.admin_notes = notes;
+  showToast('Notes saved');
+}
+
+async function updateSponsor(id, status) {
+  const { error } = await sb.from('matchday_sponsor_inquiries').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { showToast(error.message); return; }
   showToast(`Sponsor marked ${status.replace(/_/g,' ')}`);
   loadAll();
 }
 
-function exportCSV(){
-  const rows = [['Type','Name','Contact','Email','Category/Package','Status','Created']];
-  applications.forEach(a => rows.push(['Vendor', a.business_name, a.contact_name, a.email, a.matchday_booth_categories?.name || '', a.application_status, a.created_at]));
-  sponsors.forEach(s => rows.push(['Sponsor', s.company_name, s.contact_name, s.email, s.package_interest || '', s.status, s.created_at]));
+function exportCSV() {
+  const rows = [['Type','Name','Contact','Email','Phone','Category/Package','Vendor Type','Setup','Status','Health Docs','Insurance','Propane','Created']];
+  applications.forEach(a => rows.push([
+    'Vendor', a.business_name, a.contact_name, a.email, a.phone || '',
+    a.matchday_booth_categories?.name || '', a.vendor_type || '', a.setup_size || '',
+    a.application_status, a.health_docs_status, a.insurance_status,
+    a.propane_or_flame ? 'Yes' : 'No', a.created_at,
+  ]));
+  sponsors.forEach(s => rows.push([
+    'Sponsor', s.company_name, s.contact_name, s.email, s.phone || '',
+    s.package_interest || '', '', '', s.status, '', '', '', s.created_at,
+  ]));
   const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
+  const blob = new Blob([csv], { type: 'text/csv' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = 'venuemap-matchday-pipeline.csv';
+  link.download = `venuemap-matchday-${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
 }
 
